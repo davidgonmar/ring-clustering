@@ -251,10 +251,11 @@ class NoisyRingsClustering:
             samples[None, ...], self.centers[:, None, :], axis=2
         )  # shape (n_rings, n_samples)
         radii = self.radii  # shape (n_rings)
-        alpha = radii[..., None] / (
+        alpha = np.maximum(1 - radii[..., None] / (
             center_dists + self.eps
-        )  # shape (n_rings, n_samples)
+        ), radii[:, None])  # shape (n_rings, n_samples)
 
+        print("alpha", alpha.shape, alpha)
         common = (self.memberships**self.q) * alpha  # shape (n_rings, n_samples)
 
         return np.sum(
@@ -335,81 +336,82 @@ class NoisyRingsClustering:
 
 
 if __name__ == "__main__":
+    while True:
+        def ds1():
+            # create a ring dataset
+            n_samples = 1000
+            n_features = 2
+            n_clusters = 2
+            point = []
+            POSRAND = 10
 
-    def ds1():
-        # create a ring dataset
-        n_samples = 1000
-        n_features = 2
-        n_clusters = 2
-        point = []
-        POSRAND = 10
+            for i in range(n_clusters):
+                radius = 10 + np.random.uniform(-1, 1)
+                theta = np.linspace(0, 2 * np.pi, n_samples // n_clusters)
+                x = radius * np.cos(theta) + np.random.normal(
+                    0, 0.4, size=(n_samples // n_clusters)
+                )
+                y = radius * np.sin(theta) + np.random.normal(
+                    0, 0.4, size=(n_samples // n_clusters)
+                )
+                position = np.random.uniform(-POSRAND, POSRAND, size=(2))
+                x += position[0]
+                y += position[1]
+                point.append(np.stack([x, y], axis=1))
 
-        for i in range(n_clusters):
-            radius = 10 + np.random.uniform(-1, 1)
-            theta = np.linspace(0, 2 * np.pi, n_samples // n_clusters)
-            x = radius * np.cos(theta) + np.random.normal(
-                0, 0.4, size=(n_samples // n_clusters)
-            )
-            y = radius * np.sin(theta) + np.random.normal(
-                0, 0.4, size=(n_samples // n_clusters)
-            )
-            position = np.random.uniform(-POSRAND, POSRAND, size=(2))
+            point = np.array(point)
+
+            # merge dim 0 and 1
+            point = point.reshape(-1, n_features)
+
+            return point
+
+        def ds2():
+            # just a point on [10, 10] with some noise and radius 3
+            n_samples = 1000
+            n_features = 2
+            n_clusters = 1
+            point = []
+            radius = 3
+            theta = np.linspace(0, 2 * np.pi, n_samples)
+            x = radius * np.cos(theta) + np.random.normal(0, 0.1, size=(n_samples))
+            y = radius * np.sin(theta) + np.random.normal(0, 0.1, size=(n_samples))
+            position = np.array([5, 5])
             x += position[0]
             y += position[1]
             point.append(np.stack([x, y], axis=1))
+            point = np.array(point)
 
-        point = np.array(point)
+            # merge dim 0 and 1
+            point = point.reshape(-1, n_features)
 
-        # merge dim 0 and 1
-        point = point.reshape(-1, n_features)
+            return point
 
-        return point
+        point = ds1()
 
-    def ds2():
-        # just a point on [10, 10] with some noise and radius 3
-        n_samples = 1000
-        n_features = 2
-        n_clusters = 1
-        point = []
-        radius = 3
-        theta = np.linspace(0, 2 * np.pi, n_samples)
-        x = radius * np.cos(theta) + np.random.normal(0, 0.1, size=(n_samples))
-        y = radius * np.sin(theta) + np.random.normal(0, 0.1, size=(n_samples))
-        position = np.array([5, 5])
-        x += position[0]
-        y += position[1]
-        point.append(np.stack([x, y], axis=1))
-        point = np.array(point)
+        n_clusters = 2
+        ring_clustering = NoisyRingsClustering(
+            n_clusters, q=1.2, convergence_eps=0.0001, max_iters=100
+        )
 
-        # merge dim 0 and 1
-        point = point.reshape(-1, n_features)
+        ring_clustering.fit(point)
 
-        return point
+        radii, centers, memberships = ring_clustering.get_hard_labels()
 
-    point = ds1()
+        import matplotlib.pyplot as plt
 
-    n_clusters = 2
-    ring_clustering = NoisyRingsClustering(
-        n_clusters, q=1.2, convergence_eps=0.0001, max_iters=100
-    )
+        plt.scatter(point[:, 0], point[:, 1], c=memberships)
 
-    ring_clustering.fit(point)
+        # draw centers
+        plt.scatter(centers[:, 0], centers[:, 1], c="r", s=100, marker="x")
 
-    radii, centers, memberships = ring_clustering.get_hard_labels()
+        # draw radii
 
-    import matplotlib.pyplot as plt
+        for i in range(n_clusters):
+            circle = plt.Circle(centers[i], radii[i], color="r", fill=False)
+            plt.gcf().gca().add_artist(circle)
 
-    plt.scatter(point[:, 0], point[:, 1], c=memberships)
+        plt.show()
 
-    # draw centers
-    plt.scatter(centers[:, 0], centers[:, 1], c="r", s=100, marker="x")
-
-    # draw radii
-
-    for i in range(n_clusters):
-        circle = plt.Circle(centers[i], radii[i], color="r", fill=False)
-        plt.gcf().gca().add_artist(circle)
-
-    plt.show()
-
-    print("done")
+        print("done")
+    
