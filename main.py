@@ -1,147 +1,415 @@
 import numpy as np
-from dataclasses import dataclass
-import matplotlib.pyplot as plt
+import logging
 
-@dataclass
-class RingCluster:
-    position: np.ndarray
-    radius: int
+logging.basicConfig(level=logging.INFO)
 
-# assumes every point is in the cluster
-def estimate_radius_and_center(ptrs: np.ndarray):
-    center = ptrs.mean(axis=0)
-    radius = ((ptrs - center) ** 2).sum(axis=1).mean() ** 0.5
-    return center, radius
 
-def loss(ptrs: np.ndarray, cluster: RingCluster):
-    distances = np.linalg.norm(ptrs - cluster.position, axis=1)
-    return np.mean(np.abs(distances - cluster.radius))
+class FuzzyCMeans:
+    def _euclidean_distance(self, x1: np.ndarray, x2: np.ndarray) -> float:
+        """
+        Compute the Euclidean distance between two vectors.
+        Args:
+            x1: (n_features,) ndarray
+            x2: (n_features,) ndarray
 
-def individual_loss(ptrs: np.ndarray, cluster: RingCluster):
-    distances = [np.linalg.norm(ptr - cluster.position) for ptr in ptrs]
-    return np.abs(np.array(distances) - cluster.radius)
+        Returns:
+            float: the Euclidean distance between x1 and x2
+        """
+        return np.sqrt(
+            np.sum((x1 - x2) ** 2, axis=-1)
+        )  # sum over the features, not the samples
 
-class RingClustering:
-    def __init__(self):
-        pass
-    
-    
-    def _neighbourhood(self, ptrid, eps: float = 1):
-        ptr = self.ptrs[ptrid]
-        return np.linalg.norm(self.ptrs - ptr, axis=1) < eps
-    
-    def _expand_cluster(self, ptridx: int, cluster_id: int, eps: float = 1):
-        seeds = np.where(self._neighbourhood(ptridx, eps))[0]
-        for seed in seeds:
-            if self.labels[seed] == -1:
-                self.labels[seed] = cluster_id
-            elif self.labels[seed] == 0:
-                self.labels[seed] = cluster_id
-                self._expand_cluster(seed, cluster_id, eps)
+    _dist = _euclidean_distance
 
-    def fit(self, ptrs: np.ndarray, n_initial_centers: int = 4):
-        MIN_RADIUS = 1
-        MAX_RADIUS = 20
-        assert ptrs.ndim == 2, "expected ptrs to have shape (n_samples, n_features), got {}".format(ptrs.shape)
-        # random positions enclosed in the ptrs
-        n_dims = ptrs.shape[1]
-        maxes = ptrs.max(axis=0, keepdims=False)
-        mins = ptrs.min(axis=0, keepdims=False)
+    def __init__(
+        self, n_clusters: int = 3, max_iter: int = 100, m: float = 2, eps: float = 0.01
+    ):
+        self.n_clusters = n_clusters
+        self.max_iter = max_iter
+        self.m = m
+        self.fitted = False
+        self.eps = eps
 
-        rand_centers = np.random.uniform(mins, maxes, size=(n_initial_centers, n_dims))
+    def _init_membership(self, n_samples: int) -> np.ndarray:
+        """
+        Initialize the membership matrix.
+        Args:
+            n_samples: int, the number of samples
 
-        # random radius
-        rand_radius = np.random.uniform(MIN_RADIUS, MAX_RADIUS, size=(n_initial_centers))
+        Returns:
+            ndarray: the membership matrix of shape (n_clusters, n_samples)
+        """
+        r = np.random.rand(self.n_clusters, n_samples)
+        return r / r.sum(
+            0
+        )  # normalize the rows to sum to 1 (sum accross a column is 1)
 
-        self.clusters = [RingCluster(position, radius) for position, radius in zip(rand_centers, rand_radius)]
-        self.ptrs = ptrs
+    def _compute_centroids(self, X: np.ndarray, membership: np.ndarray) -> np.ndarray:
+        """
+        Compute the centroids of the clusters.
+        Args:
+            X: (n_samples, n_features) ndarray
+            membership: (n_clusters, n_samples) ndarray, the membership matrix
 
-        # compute losses for each cluster
-        losses = []
-        for cluster in self.clusters:
-            losses.append(individual_loss(ptrs, cluster))
-    
-        losses = np.array(losses) # shape (n_clusters, n_samples)
-        # select the cluster with the lowest loss for each point
-        self.labels = np.argmin(losses, axis=0)
+        Returns:
+            ndarray: the centroids of the clusters
+        """
+        return np.dot(membership**self.m, X) / np.sum(
+            membership**self.m, axis=1, keepdims=True
+        )
 
-        for i in range(300):
-            # update clusters
-            for i, cluster in enumerate(self.clusters):
-                cluster.ptrs = ptrs[self.labels == i]
-                cluster.position, cluster.radius = estimate_radius_and_center(cluster.ptrs)
-            
-            # compute losses for each cluster
-            losses = []
-            for cluster in self.clusters:
-                losses.append(individual_loss(ptrs, cluster))
-        
-            losses = np.array(losses) # shape (n_clusters, n_samples)
-            # select the cluster with the lowest loss for each point
-            new_labels = np.argmin(losses, axis=0)
+    def _update_membership(self, X: np.ndarray, centroids: np.ndarray) -> np.ndarray:
+        """
+        Update the membership matrix.
+        Args:
+            X: (n_samples, n_features) ndarray
+            centroids: (n_clusters, n_features) ndarray
 
-            # now perform some kind of dbscan algorithm
-            i = 0
-            for c in self.clusters:
-                ptrid = self.ptrs[new_labels == c]
-                if len(ptrid) == 0:
-                    continue
-                self._expand_cluster(ptrid[0], i)
-                i += 1
+        Returns:
+            ndarray: the updated membership matrix
+        """
+        distances = np.array(
+            [self._dist(X, c) for c in centroids]
+        )  # shape (n_clusters, n_samples)
+        dsum_per_cluster = (
+            distances.sum(0, keepdims=True) + 1e-8
+        )  # avoid div by zero, shape (1, n_samples)
+        normalized_dists = (
+            distances / dsum_per_cluster + 1e-8
+        )  # avoid div by zero, shape (n_clusters, n_samples)
+        return 1 / (normalized_dists ** (2 / (self.m - 1)))
 
-            if np.all(new_labels == self.labels):
-                print("Converged after {} iterations".format(i))
-                self.labels = new_labels
+    def fit(self, X: np.ndarray):
+        """
+        Fit the model to the data matrix X.
+        Args:
+            X: (n_samples, n_features) ndarray
+
+        Returns:
+            self
+        """
+        assert (
+            len(X.shape) == 2
+        ), "X must be a 2D array with shape (n_samples, n_features), got shape {}".format(
+            X.shape
+        )
+        if self.fitted:
+            logging.warning(
+                "The model has already been fitted. Re-fitting will overwrite the previous model."
+            )
+
+        self.fitted = True
+        n_samples = X.shape[0]
+
+        # Initialize the centroids and labels
+        self.membership = self._init_membership(n_samples)
+        self.centroids = self._compute_centroids(X, self.membership)
+
+        for _ in range(self.max_iter):
+            self.centroids = self._compute_centroids(X, self.membership)
+            new_membership = self._update_membership(X, self.centroids)
+            if np.allclose(new_membership, self.membership, atol=self.eps):
+                logging.info("Converged after {} iterations. Stopping early.".format(_))
+                self.centroids = self._compute_centroids(
+                    X, new_membership
+                )  # update centroids one last time
                 break
-        
-            self.labels = new_labels
-        
-    
-    def draw(self):
-        assert self.ptrs.shape[1] == 2, "draw method only supports 2D data"
+            self.membership = new_membership
 
-        for cluster in self.clusters:
-            plt.scatter(cluster.position[0], cluster.position[1], c='r')
-            circunference = plt.Circle(cluster.position, cluster.radius, color='r', fill=False)
-            plt.gca().add_artist(circunference)
-        
-        # now, each label is a color
-        colors = ['b', 'g', 'y', 'm', 'c', 'k']
-        for i in range(len(self.clusters)):
-            plt.scatter(self.ptrs[self.labels == i, 0], self.ptrs[self.labels == i, 1], c=colors[i])
-        
-        plt.show()
+        return self
 
+    def get_hard_labels(self):
+        """
+        Get the hard labels of the data.
+        Returns:
+            ndarray: the hard labels of the data
+        """
+        assert self.fitted, "The model has not been fitted yet."
+        return np.argmax(
+            self.membership, axis=0
+        )  # get the index of the maximum value along the rows
+
+
+class NoisyRingsClustering:
+    def __init__(
+        self,
+        n_rings: int,
+        q: float,
+        convergence_eps: float = 0.01,
+        max_iters: int = 200,
+    ) -> None:
+        self.n_rings = n_rings
+        self.fitted = False
+        self.q = q
+        self.max_iters = max_iters
+        self.convergence_eps = convergence_eps
+        self.eps = 1e-10
+
+    def _eucledian_dist(
+        self, x: np.ndarray, y: np.ndarray, axis: int = 1
+    ) -> np.ndarray:
+        """
+        Calculate the Euclidean distance between two arrays of points
+        """
+        if x.ndim != y.ndim:
+            raise ValueError(
+                "Shapes of x and y must be the same, got {} and {}".format(
+                    x.shape, y.shape
+                )
+            )
+        return np.sqrt(np.sum((x - y) ** 2, axis=axis, keepdims=False))
+
+    def _dist_to_rings(
+        self, x: np.ndarray, centers: np.ndarray, radius: np.ndarray
+    ) -> np.ndarray:
+        """
+        Calculate the distance of the points to the ring.
+        The distance is the absolute difference between the Euclidean distance of the points to the center and the radius of the ring.
+
+        Args:
+            x: array of shape (n_samples, n_features)
+            centers: array of shape (n_rings, n_features)
+            radius: array of shape (n_rings)
+
+        Returns:
+            array of shape (n_samples)
+        """
+        # pass centers of shape (n_samples, n_features) to (n_rings, 1, n_features)
+        # that'll be broadcasted to (n_rings, n_samples, n_features)
+        # and reduced over the last axis (features axis)
+        # so we'll get a matrix of shape (n_rings, n_samples) with the distances of each center to each sample
+        dists = self._eucledian_dist(
+            x[None, ...], centers[:, None, :], axis=2
+        )  # shape (n_rings, n_samples)
+
+        # returns the absolute difference between the distances and the radius
+        return np.abs(dists - radius[:, None])  # shape (n_rings, n_samples)
+
+    def get_new_memberships(self, samples: np.ndarray) -> np.ndarray:
+        """
+        Calculate the new memberships of the samples to the rings
+
+        Args:
+            samples: array of shape (n_samples, n_features)
+
+        Returns:
+            array of shape (n_rings, n_samples)
+        """
+
+        ring_dists = (
+            self._dist_to_rings(samples, self.centers, self.radii) + 1e-10
+        )  # shape (n_rings, n_samples)
+
+        # sum over the clusters, to compute, for each sample, the sum of the distances to each cluster
+        div = np.sum(ring_dists, axis=0, keepdims=True)  # shape (1, n_samples)
+
+        mem = ((ring_dists) ** (-1 / (self.q - 1))) / (
+            (div ** (-1 / (self.q - 1)))
+        )  # shape (n_rings, n_samples)
+
+        x = mem / (
+            np.sum(mem, axis=0, keepdims=True) + 1e-10
+        )  # shape (n_rings, n_samples)
+
+        assert x.sum(axis=0).all() == 1
+
+        return x
+
+    def get_new_radii(self, samples: np.ndarray) -> np.ndarray:
+        """
+        Calculate the new radii of the rings
+
+        Args:
+            samples: array of shape (n_samples, n_features)
+
+        Returns:
+            array of shape (n_rings)
+        """
+        # warning! not ring distances, but distances to the centers !!!
+        # self.memberships shape is (n_rings, n_samples)
+        assert np.sum(self.memberships, axis=0).all() == 1
+        center_dists = self._eucledian_dist(
+            samples[None, ...], self.centers[:, None, :], axis=2
+        )  # shape (n_rings, n_samples)
+        return np.sum((self.memberships**self.q) * center_dists, axis=1) / np.sum(
+            self.memberships**self.q, axis=1
+        )  # shape (n_rings)
+
+    def get_new_centers(self, samples: np.ndarray) -> np.ndarray:
+        """
+        Calculate the new centers of the rings
+
+        Args:
+            samples: array of shape (n_samples, n_features)
+
+        Returns:
+            array of shape (n_rings, n_features)
+        """
+        n_samples = samples.shape[0]
+        n_features = samples.shape[1]
+        center_dists = self._eucledian_dist(
+            samples[None, ...], self.centers[:, None, :], axis=2
+        )  # shape (n_rings, n_samples)
+        radii = self.radii  # shape (n_rings)
+        alpha = radii[..., None] / (
+            center_dists + self.eps
+        )  # shape (n_rings, n_samples)
+
+        common = (self.memberships**self.q) * alpha  # shape (n_rings, n_samples)
+
+        return np.sum(
+            common.reshape(self.n_rings, n_samples, 1)
+            * samples.reshape(1, n_samples, n_features),
+            axis=1,
+        ) / (
+            np.sum(common, axis=1, keepdims=True) + self.eps
+        )  # shape (n_rings, n_features)
+
+    def _convergence_criterion(
+        self, old_memberships: np.ndarray, new_memberships: np.ndarray
+    ) -> bool:
+        """
+        Check if the memberships have converged
+        """
+        return np.allclose(old_memberships, new_memberships, atol=self.convergence_eps)
+
+    def _initialize(self, x: np.ndarray) -> None:
+        """
+        Initialize the centers, radii and memberships of the rings
+
+        Args:
+            x: array of shape (n_samples, n_features)
+        """
+        # use kmeans to initialize the centers
+
+        kmeans = FuzzyCMeans(n_clusters=self.n_rings, max_iter=500, m=2, eps=0.01)
+        kmeans.fit(x)
+
+        self.centers = kmeans.centroids  # shape (n_rings, n_features)
+
+        # initialize the radii as the average distance of the samples to the centers
+        # (1, n_samples, n_features) x (n_rings, 1, n_features) -> (n_rings, n_samples, n_features)
+
+        # initialize the memberships as hard ones from the kmeans
+        self.memberships = kmeans.membership
+
+        dist = self._eucledian_dist(
+            x[None, ...], self.centers[:, None, :], axis=2
+        )  # shape (n_rings, n_samples)
+        # only take into account distances to the center of the cluster
+        self.radii = np.mean(dist, axis=1)  # shape (n_rings)
+        print(dist, self.radii, self.centers)
+
+    def fit(self, x: np.ndarray) -> None:
+        assert x.ndim == 2, "Input data must be 2D, got shape {}".format(x.shape)
+        n_samples, n_features = x.shape
+        self.x = x
+        self.fitted = True
+
+        self._initialize(x)
+
+        for it in range(self.max_iters):
+            new_memberships = self.get_new_memberships(x)
+
+            if self._convergence_criterion(self.memberships, new_memberships):
+                self.memberships = new_memberships
+                logging.info(
+                    "Converged after {} iterations. Stopping early.".format(it)
+                )
+                break
+
+            self.memberships = new_memberships
+            self.radii = self.get_new_radii(x)
+            self.centers = self.get_new_centers(x)
+
+    def get_hard_labels(self) -> np.ndarray:
+        """
+        Get the hard labels of the samples
+
+        Returns:
+            radii: array of shape (n_samples)
+            centers: array of shape (n_samples, n_features)
+            memberships: array of shape (n_samples) with the index of the cluster for each sample
+        """
+        return self.radii, self.centers, np.argmax(self.memberships, axis=0)
 
 
 if __name__ == "__main__":
-    # create a ring dataset
-    n_samples = 1000
-    n_features = 2
-    n_clusters = 4
-    point = []
 
-    for i in range(n_clusters):
-        radius = 10 + np.random.uniform(-1, 1)
-        theta = np.linspace(0, 2 * np.pi, n_samples // n_clusters)
-        x = radius * np.cos(theta) + np.random.normal(0, 0.1, size=(n_samples // n_clusters))
-        y = radius * np.sin(theta) + np.random.normal(0, 0.1, size=(n_samples // n_clusters))
-        position = np.random.uniform(-50, 50, size=(2))
+    def ds1():
+        # create a ring dataset
+        n_samples = 1000
+        n_features = 2
+        n_clusters = 2
+        point = []
+        POSRAND = 10
+
+        for i in range(n_clusters):
+            radius = 10 + np.random.uniform(-1, 1)
+            theta = np.linspace(0, 2 * np.pi, n_samples // n_clusters)
+            x = radius * np.cos(theta) + np.random.normal(
+                0, 0.4, size=(n_samples // n_clusters)
+            )
+            y = radius * np.sin(theta) + np.random.normal(
+                0, 0.4, size=(n_samples // n_clusters)
+            )
+            position = np.random.uniform(-POSRAND, POSRAND, size=(2))
+            x += position[0]
+            y += position[1]
+            point.append(np.stack([x, y], axis=1))
+
+        point = np.array(point)
+
+        # merge dim 0 and 1
+        point = point.reshape(-1, n_features)
+
+        return point
+
+    def ds2():
+        # just a point on [10, 10] with some noise and radius 3
+        n_samples = 1000
+        n_features = 2
+        n_clusters = 1
+        point = []
+        radius = 3
+        theta = np.linspace(0, 2 * np.pi, n_samples)
+        x = radius * np.cos(theta) + np.random.normal(0, 0.1, size=(n_samples))
+        y = radius * np.sin(theta) + np.random.normal(0, 0.1, size=(n_samples))
+        position = np.array([5, 5])
         x += position[0]
         y += position[1]
         point.append(np.stack([x, y], axis=1))
-    
-    
-    
-    point = np.array(point)
+        point = np.array(point)
 
-    # merge dim 0 and 1
-    point = point.reshape(-1, n_features)
+        # merge dim 0 and 1
+        point = point.reshape(-1, n_features)
 
-    ring_clustering = RingClustering()
+        return point
+
+    point = ds1()
+
+    n_clusters = 2
+    ring_clustering = NoisyRingsClustering(
+        n_clusters, q=1.2, convergence_eps=0.0001, max_iters=100
+    )
 
     ring_clustering.fit(point)
 
-    ring_clustering.draw()
+    radii, centers, memberships = ring_clustering.get_hard_labels()
+
+    import matplotlib.pyplot as plt
+
+    plt.scatter(point[:, 0], point[:, 1], c=memberships)
+
+    # draw centers
+    plt.scatter(centers[:, 0], centers[:, 1], c="r", s=100, marker="x")
+
+    # draw radii
+
+    for i in range(n_clusters):
+        circle = plt.Circle(centers[i], radii[i], color="r", fill=False)
+        plt.gcf().gca().add_artist(circle)
+
+    plt.show()
 
     print("done")
