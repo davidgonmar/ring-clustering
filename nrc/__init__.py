@@ -164,14 +164,13 @@ class NoisyRingsClustering:
         # initialize the radii as the average distance of the samples to the centers
         # (1, n_samples, n_features) x (n_rings, 1, n_features) -> (n_rings, n_samples, n_features)
 
-        # initialize the memberships as hard ones from the kmeans
         self.memberships = kmeans.membership
 
         dist = self._eucledian_dist(
             x[None, ...], self.centers[:, None, :], axis=2
         )  # shape (n_rings, n_samples)
         # only take into account distances to the center of the cluster
-        self.radii = np.mean(dist, axis=1)  # shape (n_rings)
+        self.radii = self.get_new_radii(x)
 
     def fit(self, x: np.ndarray) -> None:
         assert x.ndim == 2, "Input data must be 2D, got shape {}".format(x.shape)
@@ -194,6 +193,41 @@ class NoisyRingsClustering:
             self.memberships = new_memberships
             self.radii = self.get_new_radii(x)
             self.centers = self.get_new_centers(x)
+    def prune_noise(self, threshold: float, reestimate_centers_and_radii: bool = True) -> np.ndarray:
+        """
+        Prune the noise from the clusters
+
+        Args:
+            threshold: float, the threshold to prune the noise
+        """
+        # get the maximum membership for each sample
+        
+        # prune ones with distance to radius > averagedist + threshold
+        
+        ringdists = self._dist_to_rings(self.x, self.centers, self.radii) # shape (n_rings, n_samples)
+        avg_ringdist_per_cluster = np.mean(ringdists, axis=1)
+        mask = np.ones_like(ringdists[1], dtype=bool) # indicates which samples are not noise with a 1
+
+        # noise -> distance to the center is larger than the (average distance to ring * threshold)
+        for i in range(self.n_rings):
+            # only take into account samples belonging to the cluster
+            samplemasks = np.argmax(self.memberships, axis=0) == i
+            mask = np.logical_and(mask, ringdists[i] < avg_ringdist_per_cluster[i] * threshold)
+            mask = np.logical_or(mask, samplemasks)
+
+        self.x = self.x[mask]
+        
+        self.memberships[:, np.logical_not(mask)] = -1
+        if reestimate_centers_and_radii:
+            old_memberships = self.memberships
+            self.memberships = self.memberships[:, mask]
+            self.centers = self.get_new_centers(self.x)
+            self.radii = self.get_new_radii(self.x)
+
+            self.memberships = old_memberships
+
+        return mask
+
 
     def get_labels(self) -> np.ndarray:
         """
