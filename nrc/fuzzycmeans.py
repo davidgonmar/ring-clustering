@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 
+
 class FuzzyCMeans:
     def _euclidean_distance(self, x1: np.ndarray, x2: np.ndarray) -> float:
         """

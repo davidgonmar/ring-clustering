@@ -7,6 +7,8 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
@@ -111,6 +113,88 @@ Then, we can solve for $V_i$:
 V_i = \frac{\sum_{j=1}^{n} u_{ij}^q \alpha_{ij} X_j}{\sum_{j=1}^{n} u_{ij}^q \alpha_{ij}}
 \end{equation}
 
+
+\begin{tikzpicture}\label{fig:circle}
+        % Define radius
+        \def\radius{3cm}
+        \def\angle{45}
+    
+        % Draw the circle
+        \draw (0,0) circle (\radius);
+    
+        % Define points
+        \coordinate (V_i) at (0,0); % Center of the circle
+        \coordinate (A) at ({\radius*cos(\angle)},0); % Point on the circle at the specified angle
+        \coordinate (V'_i) at (\angle:\radius);
+        \coordinate (X_j) at (3.5, 3.5);
+    
+        % Draw the triangle
+        \draw (V_i) -- (A) -- (V'_i) -- cycle;
+        \draw[dotted] (V'_i) -- (X_j);
+
+        % Draw points
+        \fill (V_i) circle (2pt);
+        \fill (V'_i) circle (2pt);
+        \fill (X_j) circle (2pt);
+ 
+        \node[below] at (V_i) {$V_i$};
+        \node[above right] at (V'_i) {$V'_i$};
+        \node[above right] at (X_j) {$X_j$};
+
+        % label on hypotenuse (line that connects V_i and V'_i). Not on the point, on the line
+        \node[above=2pt] at ($(V_i)!0.5!(V'_i)$) {$r_i$};
+        % explanation
+        \node[below] at (0,-\radius-0.5) {
+            \begin{tabular}{c}
+                $V'_i = \frac{r_i}{d_{ij}}X_j + (1 - \frac{r_i}{d_{ij}})V_i$ \\
+            \end{tabular}
+        };
+\end{tikzpicture}
+\begin{center}
+    \textbf{Figure \ref{fig:circle}:} Illustration of the update of the cluster centers equation when X_j is outside the circle.
+\end{center}
+
+
+\begin{tikzpicture}\label{fig:circle}
+    % Define radius
+    \def\radius{3cm}
+    \def\angle{45}
+
+    % Draw the circle
+    \draw (0,0) circle (\radius);
+
+    % Define points
+    \coordinate (V_i) at (0,0); % Center of the circle
+    \coordinate (A) at ({\radius*cos(\angle)},0); % Point on the circle at the specified angle
+    \coordinate (V'_i) at (\angle:\radius);
+    \coordinate (X_j) at (1, 1);
+
+    % Draw the triangle
+    \draw (V_i) -- (A) -- (V'_i) -- cycle;
+    \draw[dotted] (V'_i) -- (X_j);
+
+    % Draw points
+    \fill (V_i) circle (2pt);
+    \fill (V'_i) circle (2pt);
+    \fill (X_j) circle (2pt);
+
+    \node[below] at (V_i) {$V_i$};
+    \node[above right] at (V'_i) {$V'_i$};
+    \node[below=3pt] at (X_j) {$X_j$};
+
+    % label on hypotenuse (line that connects V_i and V'_i). Not on the point, on the line
+    \node[above=2pt] at ($(V_i)!0.5!(V'_i)$) {$r_i$};
+    % explanation
+    \node[below] at (0,-\radius-0.5) {
+        \begin{tabular}{c}
+            $V'_i = \frac{r_i}{d_{ij}}X_j + (1 - \frac{r_i}{d_{ij}})V_i$ \\
+        \end{tabular}
+    };
+\end{tikzpicture}
+\begin{center}
+\textbf{Figure \ref{fig:circle}:} Illustration of the update of the cluster centers equation when X_j is inside the circle.
+\end{center}
+
 \subsection{Initializing the Parameters}
 \cite{b1} proposes two initialization methods. Here, we use the second one, which is running some iterations of
 the Fuzzy C-Means algorithm, and then using the membership matrix and the cluster centers to initialize the Fuzzy K-Rings algorithm.
@@ -127,9 +211,10 @@ This is equivalent to the criterion used in \cite{b1}:
 \max_{i, j} |u_{ij} - \hat{u_{ij}}| < \epsilon
 \end{equation}
 
-
 \subsection{Implementation}
-All of the above steps can be formulated as Tensor/NDArray operations, with no need for explicit loops.
+All of the above steps can be formulated as Tensor/NDArray operations, with no need for explicit loops,
+by defining the different operations as element-wise operations, tensor multiplications and exploiting
+expansion and broadcasting rules as needed. Code is shown at \cite{b1}.
 This allows to exploit the parallelism of modern computing frameworks, like NumPy, Eigen, or PyTorch.
 The algorithm can be implemented with the following pseudocode:
 \begin{verbatim}
