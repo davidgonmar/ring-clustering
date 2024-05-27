@@ -168,7 +168,17 @@ V_i = \frac{\sum_{j=1}^{n} u_{ij}^q X_j}{\sum_{j=1}^{n} u_{ij}^q}
 r_i = \frac{\sum_{j=1}^{n} u_{ij}^q d_{ij}}{\sum_{j=1}^{n} u_{ij}^q}
 \end{equation}
 
+\subsection{Intuition}
+After having given a formal description of the algorithm, we can give an intuitive explanation of the algorithm.
 
+First, for the membership degrees, we can see that the algorithm is trying to assign higher membership degrees to points that are closer to the ring contour.
+This is done by averaging the distances of the points to the different rings, and assigning them proportionally.
+
+As for the cluster centers, the algorithm is just using a weighted average of the points, with the weights being the membership degrees.
+This is similar to the K-Means algorithm, but with the weights being the membership degrees instead of a binary value, and exactly the same as the Fuzzy C-Means algorithm.
+
+Finally, for the radii, the algorithm is trying to assign the radii by using a weighted average of the distances of the points to the cluster centers.
+This is done by using the membership degrees as weights, and the distances as the values to be averaged.
 
 
 \subsection{Initializing the Parameters}
@@ -181,6 +191,8 @@ We use the following convergence criterion:
 \begin{equation}
 |\hat{u_{ij}} - u_{ij}| < \epsilon \quad \forall i, j
 \end{equation}
+Where $\hat{u_{ij}}$ is the membership degree of the previous iteration, and $u_{ij}$ is the membership degree of the current iteration,
+and $\epsilon$ is a small value, usually $10^{-3}$, given as a hyperparameter.
 
 \subsection{Overall Steps}
 The overall steps of the algorithm are as follows:
