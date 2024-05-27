@@ -13,7 +13,7 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Clustering Noisy Rings}
+\title{Clustering Rings in Noisy Data}
 
 \author{\IEEEauthorblockN{1\textsuperscript{st} David González Martínez}
 
@@ -24,22 +24,42 @@ davgonmar2@alum.us.es}
 \maketitle
 
 \begin{abstract}
-This document is a model and instructions for \LaTeX.
-This and the IEEEtran.cls file define the components of your paper [title, text, heads, etc.]. *CRITICAL: Do Not Use Symbols, Special Characters, Footnotes, 
-or Math in Paper Title or Abstract.
+In this paper, we apply the Fuzzy K-Rings algorithm, also known as the Fuzzy C-Shells algorithm to ring clustering in noisy data.
+We further propose a modification to the algorithm to make it more robust to noise, and conduct different experiments to test the performance of the algorithm.
 \end{abstract}
 
 \begin{IEEEkeywords}
-component, formatting, style, styling, insert
+Fuzzy K-Rings, Fuzzy C-Shells, Clustering, Noisy Data, Ring Clustering, Hypersphere Clustering
 \end{IEEEkeywords}
 
 \section{Introduction}
-This document is a model and instructions for \LaTeX.
-Please observe the conference page limits. 
+We are presented with the following problem: we have a dataset that is composed different rings and noise. Our objective is to classify the points in different clusters,
+each corresponding to a different ring. The Fuzzy K-Rings algorithm, also known as the Fuzzy C-Shells algorithm, is a clustering algorithm that has been used in the past
+for similar tasks. The algorithm is inspired on the Fuzzy C-Means algorithm, and was introduced, altough in different variations, in \cite{308484} and \cite{DAVE1992713}.
+From now on, we'll refer to the algorithm as Fuzzy K-Rings (FKR).
+
+\section{Fuzzy Clustering Algorithms}
+In hard clustering algorithms, each data point is assigned to a single cluster. In contrast, fuzzy algorithms assign a membership degree to each data point for each cluster.
+One of the most popular ones is the Fuzzy C-Means algorithm. A formal description can be found in \cite{bookpatternrecognition} and \cite{BEZDEK1984191}. It can be seen as an optimization problem,
+where the objective function is to minimize the following equation:
+\begin{equation}
+J(U, V) = \sum_{i=1}^{n} \sum_{j=1}^{k} (u_{ij})^q d_{ij}^2
+\end{equation}
+where $k$ is the number of clusters, $n$ is the number of data samples, $u_{ij}$ is the membership degree of cluster $i$ to data sample $j$,
+$d_{ij}$ is the eucledian distance between data point $i$ and the center of cluster $j$, and $q$ is a parameter that controls the fuzziness of the membership degrees.
+That is, higher values of $q$ will make the membership degrees more 'fuzzy', and lower values will make them harder, that is, closer to regular K-Means.
+$u$ is a matrix of size $n \times k$, and can be interpreted as 'how much data point $i$ belongs to cluster $j$'.
+It is important to note that the following conditions must be met, as described in \cite{BEZDEK1984191}:
+\begin{enumerate}
+    \item $u_{ij} \in [0, 1]$
+    \item $\sum_{j=1}^{k} u_{ij} = 1$
+\end{enumerate}
+The higher the value of $q$, the more 'fuzzy' the algorithm will be. In the limit, when $q \rightarrow 1$, the algorithm will be equivalent to K-Means.
+
 
 \section{The Fuzzy K-Rings Algorithm}
 The Fuzzy K-Rings algorithm is a clustering algorithm that is able to cluster data points in a ring-shaped dataset.
-The algorithm is inspired on the K-Means algorithm, and described originally in \cite{b1}.
+The algorithm is inspired on the K-Means algorithm, and described in \cite{DAVE1992713} and \cite{308484}, altough in different variations.
 It is described as an optimization problem, where the objective function is to minimize the following equation:
 \begin{equation}\label{eq:objective}
 J_q(U, V) = \sum_{i=1}^{n} \sum_{j=1}^{k} u_{ij}^q (d_{ij} - r_i)^2
@@ -47,113 +67,24 @@ J_q(U, V) = \sum_{i=1}^{n} \sum_{j=1}^{k} u_{ij}^q (d_{ij} - r_i)^2
 where $k$ is the number of clusters, $n$ is the number of data samples, $u_{ij}$ is the membership degree of cluster $i$ to data sample $j$, $d_{ij}$ is the eucledian distance between data point $i$ and the center of cluster $j$, $r_i$ is the radius of the cluster $i$, and $q$ is a parameter that controls the fuzziness of the membership degrees.
 That is, higher values of $q$ will make the membership degrees more fuzzy, and lower values will make them harder.
 From now on, we'll refer to $$(d_{ij} - r_i)^2$$ as $d'_ij$.
-Then, we can define the following steps for the basic FKR algorithm:
-\begin{enumerate}
-    \item Initialize the membership degrees $U$ and the cluster centers $V$.
-    \item Repeat while true:
-    \begin{enumerate}
-        \item Update the membership degrees $U$.
-        \item Update the cluster radii $R$.
-        \item Update the cluster centers $V$.
-        \item If the convergence criteria is met, break.
-    \end{enumerate}
-\end{enumerate}
-
-Now, we'll describe the ways to update the different parameters in the algorithm.
+Now, we'll describe the ways to update the different parameters in the algorithm, and then we'll describe the initialization and convergence criteria, as well as the concrete steps.
 
 \subsection{Updating the Membership Degrees}
-The membership degrees are updated using the following equation, derived from the Fuzzy C-Means algorithm:
+The membership degrees are updated using the following equation, as described in both \cite{DAVE1992713} and \cite{308484}. It's the same as the one used in the Fuzzy C-Means algorithm, but with $d_{ij}$ replaced by $d'_{ij}$.
 \begin{equation}
 u_{ij} = \frac{d'^2(X_j, V_i)^{\frac{-1}{q-1}}}{\sum_{k=1}^{K} d'^2(X_j, V_k)^{\frac{-1}{q-1}}}
 \end{equation}
 
-\subsection{Updating the Cluster Radii}
-The cluster radii are updated by deriving \eqref{eq:objective} with respect to $r_i$ and setting it to zero:
+\subsection{Updating the Cluster Radii and Centers}
+As mentioned, we can define the algorith as an optimization problem after fixing $U$. We can then obtain the optimal (minimum) values for the objective function
+by setting the partial derivatives with respect to $r_i$ and $V_i$ to zero.
+First, we have:
 \begin{equation}\label{eq:d_dr}
-\frac{\partial}{\partial r_i}(J_q) = \sum_{j=1}^{n} u_{ij}^q\frac{\partial}{\partial r_i} (d_{ij} - r_i)^2 = 0
-\Rightarrow r_i = \frac{\sum_{j=1}^{N} u_{ij}^q d_{ij}}{\sum_{j=1}^{N} u_{ij}^q}
+\frac{\partial}{\partial r_i}(J_q) = \sum_{j=1}^{n} u_{ij}^q\frac{\partial}{\partial r_i} (d_{ij} - r_i)^2 = \sum_{j=1}^{n} u_{ij}^q (r_i - d_{ij}) = 0
 \end{equation}
 
-\subsection{Updating the Cluster Centers}
-Here, we take a different approach to the one taken in the original paper.
-It is equivalent, but allows us to generalize to any dimension, and is more efficient on modern computing stacks,
-like NumPy, Eigen, or PyTorch.
-
-Let $X_j$ be a data point, and $V_i$ be the center of cluster $i$. Let $d_{ij}$ be the eucledian distance between $X_j$ and $V_i$,
-and $r_i$ be the radius of cluster $i$.
-
-Then, let the following be true:
-\begin{equation}
-V'_i = \frac{r_i}{d_{ij}}X_j + (1 - \frac{r_i}{d_{ij}})V_i
-\end{equation}
-
-Differentiating \eqref{eq:objective} with respect to $V_i$ and setting it to zero, we get:
-\begin{equation}\label{eq:d_dV}
-\frac{\partial}{\partial V_i}(J_q) = \sum_{j=1}^{n} u_{ij}^q\frac{\partial}{\partial V_i} (d_{ij} - r_i)^2 = 0
-\end{equation}
-Then, we can solve:
-\begin{equation}
-\begin{aligned}
-\frac{\partial}{\partial V_i} (d_{ij} - r_i)^2 &= -2 \left( (X_j - V_i) - \frac{r_i}{|X_j - V_i|} (X_j - V_i) \right) \\
-&= -2 \left( (X_j - V_i) - \frac{r_i}{d_{ij}} (X_j - V_i) \right) \\
-&= -2 \left( (1 - \frac{r_i}{d_{ij}})X_J - (1 - \frac{r_i}{d_{ij}})V_i \right)
-\end{aligned}
-\end{equation}
-Let's define $(1 - \frac{r_i}{d_{ij}})$ as $\alpha_{ij}$.
-Then, we can rewrite the equation as:
-\begin{equation}
-\frac{\partial}{\partial V_i} (d_{ij} - r_i)^2 = -2 \alpha_{ij} (X_j - V_i)
-\end{equation}
-Plugging that into \eqref{eq:d_dV}, we get:
-\begin{equation}
-\sum_{j=1}^{n} u_{ij}^q \alpha_{ij} (X_j - V_i) = 0
-\end{equation}
-Then, we can solve for $V_i$:
-\begin{equation}
-V_i = \frac{\sum_{j=1}^{n} u_{ij}^q \alpha_{ij} X_j}{\sum_{j=1}^{n} u_{ij}^q \alpha_{ij}}
-\end{equation}
-
-
-\begin{tikzpicture}\label{fig:circle}
-        % Define radius
-        \def\radius{3cm}
-        \def\angle{45}
-    
-        % Draw the circle
-        \draw (0,0) circle (\radius);
-    
-        % Define points
-        \coordinate (V_i) at (0,0); % Center of the circle
-        \coordinate (A) at ({\radius*cos(\angle)},0); % Point on the circle at the specified angle
-        \coordinate (V'_i) at (\angle:\radius);
-        \coordinate (X_j) at (3.5, 3.5);
-    
-        % Draw the triangle
-        \draw (V_i) -- (A) -- (V'_i) -- cycle;
-        \draw[dotted] (V'_i) -- (X_j);
-
-        % Draw points
-        \fill (V_i) circle (2pt);
-        \fill (V'_i) circle (2pt);
-        \fill (X_j) circle (2pt);
- 
-        \node[below] at (V_i) {$V_i$};
-        \node[above right] at (V'_i) {$V'_i$};
-        \node[above right] at (X_j) {$X_j$};
-
-        % label on hypotenuse (line that connects V_i and V'_i). Not on the point, on the line
-        \node[above=2pt] at ($(V_i)!0.5!(V'_i)$) {$r_i$};
-        % explanation
-        \node[below] at (0,-\radius-0.5) {
-            \begin{tabular}{c}
-                $V'_i = \frac{r_i}{d_{ij}}X_j + (1 - \frac{r_i}{d_{ij}})V_i$ \\
-            \end{tabular}
-        };
-\end{tikzpicture}
-\begin{center}
-    \textbf{Figure \ref{fig:circle}:} Illustration of the update of the cluster centers equation when X_j is outside the circle.
-\end{center}
-
+Here, we take a different approach to the one taken in \cite{308484}, and similar to the one in \cite{DAVE1992713}. It allows vectorized computations, and
+automatic extension to higher dimensions, unlike \cite{308484}.
 
 \begin{tikzpicture}\label{fig:circle}
     % Define radius
@@ -167,7 +98,7 @@ V_i = \frac{\sum_{j=1}^{n} u_{ij}^q \alpha_{ij} X_j}{\sum_{j=1}^{n} u_{ij}^q \al
     \coordinate (V_i) at (0,0); % Center of the circle
     \coordinate (A) at ({\radius*cos(\angle)},0); % Point on the circle at the specified angle
     \coordinate (V'_i) at (\angle:\radius);
-    \coordinate (X_j) at (1, 1);
+    \coordinate (X_j) at (3.5, 3.5);
 
     % Draw the triangle
     \draw (V_i) -- (A) -- (V'_i) -- cycle;
@@ -180,7 +111,7 @@ V_i = \frac{\sum_{j=1}^{n} u_{ij}^q \alpha_{ij} X_j}{\sum_{j=1}^{n} u_{ij}^q \al
 
     \node[below] at (V_i) {$V_i$};
     \node[above right] at (V'_i) {$V'_i$};
-    \node[below=3pt] at (X_j) {$X_j$};
+    \node[above right] at (X_j) {$X_j$};
 
     % label on hypotenuse (line that connects V_i and V'_i). Not on the point, on the line
     \node[above=2pt] at ($(V_i)!0.5!(V'_i)$) {$r_i$};
@@ -192,24 +123,77 @@ V_i = \frac{\sum_{j=1}^{n} u_{ij}^q \alpha_{ij} X_j}{\sum_{j=1}^{n} u_{ij}^q \al
     };
 \end{tikzpicture}
 \begin{center}
-\textbf{Figure \ref{fig:circle}:} Illustration of the update of the cluster centers equation when X_j is inside the circle.
+\textbf{Figure \ref{fig:circle}:} Illustration of the update of the cluster centers equation when X_j is outside the circle.
 \end{center}
 
+
+Let $X_j$ be a data point, and $V_i$ be the center of cluster $i$. Let $d_{ij}$ be the eucledian distance between $X_j$ and $V_i$,
+and $r_i$ be the radius of cluster $i$.
+Let $d'_{ij}$ be the distance between $X_j$ and the circle with center $V_i$ and radius $r_i$.
+
+Then, let the following be true:
+\begin{equation}
+V'_i = \frac{r_i}{d_{ij}}X_j + (1 - \frac{r_i}{d_{ij}})V_i
+\end{equation}
+
+Differentiating \eqref{eq:objective} with respect to $V_i$ and setting it to zero, we get:
+\begin{equation}\label{eq:d_dV}
+\frac{\partial}{\partial V_i}(J_q) = \sum_{j=1}^{n} u_{ij}^q\frac{\partial}{\partial V_i} (d'_{ij})^2 = 0
+\end{equation}
+Note that we can rewrite $(d'_{ij})^2$ as $(X_j - V'_i)^T(X_j - V'_i)$.
+Then, we can solve:
+\begin{equation}
+\begin{aligned}
+\frac{\partial}{\partial V_i} (d_{ij} - r_i)^2 &= \left(\frac{\partial}{\partial V_i} (|X_j - V_i| - r_i)^2\right) \\
+&= -2 \left( (X_j - V_i) - \frac{r_i}{|X_j - V_i|} (X_j - V_i) \right) \\
+&= -2 \left( (X_j - V_i) - \frac{r_i}{d_{ij}} (X_j - V_i) \right) \\
+&= -2 \left( (1 - \frac{r_i}{d_{ij}})X_J - (1 - \frac{r_i}{d_{ij}})V_i \right)
+\end{aligned}
+\end{equation}
+Let's define $(1 - \frac{r_i}{d_{ij}})$ as $\alpha_{ij}$.
+Then, we can rewrite the equation as:
+\begin{equation}
+\frac{\partial}{\partial V_i} (d_{ij} - r_i)^2 = -2 \alpha_{ij} (X_j - V_i)
+\end{equation}
+Plugging that into \eqref{eq:d_dV}, we get:
+\begin{equation}
+\sum_{j=1}^{n} u_{ij}^q (d_{ij} - r_i) (X_j - V_i) = 0
+\end{equation}
+We now have a system of equations that we can solve for $V_i$ and $r_i$.
+The solution, as noted in \cite{DAVE1992713}, is:
+\begin{equation}
+V_i = \frac{\sum_{j=1}^{n} u_{ij}^q X_j}{\sum_{j=1}^{n} u_{ij}^q}
+\end{equation}
+\begin{equation}\label{eq:r_i}
+r_i = \frac{\sum_{j=1}^{n} u_{ij}^q d_{ij}}{\sum_{j=1}^{n} u_{ij}^q}
+\end{equation}
+
+
+
+
 \subsection{Initializing the Parameters}
-\cite{b1} proposes two initialization methods. Here, we use the second one, which is running some iterations of
+\cite{308484} proposes two initialization methods. Here, we use the second one, which is running some iterations of
 the Fuzzy C-Means algorithm, and then using the membership matrix and the cluster centers to initialize the Fuzzy K-Rings algorithm.
-The radii are initialized with the equation \eqref{eq:d_dr}.
+The radii are initialized with the equation \eqref{eq:r_i}.
 
 \subsection{Convergence Criterion}
 We use the following convergence criterion:
 \begin{equation}
 |\hat{u_{ij}} - u_{ij}| < \epsilon \quad \forall i, j
 \end{equation}
-where $\epsilon$ is a small number, given as a hyperparameter.
-This is equivalent to the criterion used in \cite{b1}:
-\begin{equation}
-\max_{i, j} |u_{ij} - \hat{u_{ij}}| < \epsilon
-\end{equation}
+
+\subsection{Overall Steps}
+The overall steps of the algorithm are as follows:
+\begin{enumerate}
+    \item Initialize the parameters $U$, $V$, and $R$.
+    \item While the convergence criterion is not met:
+    \begin{enumerate}
+        \item Update the membership degrees $U$.
+        \item Update the cluster radii $R$ and centers $V$ using the equations \eqref{eq:d_dr} and \eqref{eq:r_i}.
+    \end{enumerate}
+    \item Return the membership degrees $U$, the cluster centers $V$, and the cluster radii $R$.
+    \item End.
+\end{enumerate}
 
 \subsection{Implementation}
 All of the above steps can be formulated as Tensor/NDArray operations, with no need for explicit loops,
