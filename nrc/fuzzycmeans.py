@@ -107,7 +107,7 @@ class FuzzyCMeans:
             self.centroids = self._compute_centroids(X, self.membership)
             new_membership = self._update_membership(X, self.centroids)
             if np.allclose(new_membership, self.membership, atol=self.eps):
-                logger.info("FuzzyCMeans: Converged after {} iterations. Stopping early.".format(_))
+                logger.info("[FuzzyCMeans] Converged after {} iterations. Stopping early.".format(_))
                 self.centroids = self._compute_centroids(
                     X, new_membership
                 )  # update centroids one last time

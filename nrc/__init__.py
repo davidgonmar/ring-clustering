@@ -193,12 +193,12 @@ class NoisyRingsClustering:
                 noise_mask = self.get_noise_mask(x)
                 if self.max_noise_checks > noise_checks and not np.allclose(noise_mask, last_noise_mask):
                     self.noise_mask = self.get_noise_mask(x)
-                    logger.info("Converged partly after {} iterations. Recomputing noise mask and continuing. Total noise samples are {}".format(it, np.sum(self.noise_mask == 0) / self.noise_mask.shape[0]))
+                    logger.info("[NoisyRingsClustering] Converged partly after {} iterations. Recomputing noise mask and continuing. Total noise samples are {}".format(it, np.sum(self.noise_mask == 0) / self.noise_mask.shape[0]))
                     noise_checks += 1
                     last_noise_mask = self.noise_mask
                 else:
                     logger.info(
-                        "Converged after {} iterations. Stopping early.".format(it)
+                        "[NoisyRingsClustering] Converged after {} iterations. Stopping early.".format(it)
                     )
                     break
 

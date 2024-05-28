@@ -1,0 +1,1 @@
+{"data_filename": "./data/noisy_rings.csv", "n_rings": 2, "q": 1.2, "convergence_eps": 0, "max_iters": 3300, "noise_entropy_threshold": 0.55}
