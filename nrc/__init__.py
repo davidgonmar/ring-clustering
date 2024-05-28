@@ -1,10 +1,12 @@
 import numpy as np
 import logging
 from nrc.fuzzycmeans import FuzzyCMeans
+from typing import Literal
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+NOISE = -1
 class NoisyRingsClustering:
     def __init__(
         self,
@@ -15,6 +17,7 @@ class NoisyRingsClustering:
         noise_distance_threshold: float = 0.1,
         apply_noise_removal: bool = True,
         max_noise_checks: int = 20,
+        datadist: Literal["concentric", "random"] = "random"
     ) -> None:
         self.n_rings = n_rings
         self.fitted = False
@@ -25,6 +28,7 @@ class NoisyRingsClustering:
         self.noise_distance_threshold = noise_distance_threshold
         self.max_noise_checks = max_noise_checks
         self.apply_noise_removal = apply_noise_removal
+        self.datadist = datadist
 
     def _eucledian_dist(
         self, x: np.ndarray, y: np.ndarray, axis: int = 1
@@ -64,7 +68,7 @@ class NoisyRingsClustering:
         )  # shape (n_rings, n_samples)
 
         # returns the absolute difference between the distances and the radius
-        return np.abs(dists - radius[:, None])  # shape (n_rings, n_samples)
+        return np.abs(dists - radius[:, None]) # shape (n_rings, n_samples)
 
     def get_new_memberships(self, samples: np.ndarray) -> np.ndarray:
         """
@@ -155,23 +159,36 @@ class NoisyRingsClustering:
         """
         # use kmeans to initialize the centers
         
-        kmeans = FuzzyCMeans(n_clusters=self.n_rings, max_iter=300, m=1.2, eps=0.01)
-        kmeans.fit(x)
+        if self.datadist == "concentric":
+            # in the case of concentric rings, we can initialize the centers as the mean of the samples
+            self.centers = np.mean(x, axis=0)[None, ...].repeat(self.n_rings, axis=0)
+            # initialize the radii as random values between min and max distance to the center
+            max_dist = np.max(self._eucledian_dist(x, self.centers[0][None, ...]))
+            min_dist = np.min(self._eucledian_dist(x, self.centers[0][None, ...]))
+            self.radii = np.random.uniform(min_dist, max_dist, self.n_rings)
+            self.memberships = np.random.rand(self.n_rings, x.shape[0])
+            self.memberships = self.memberships / np.sum(self.memberships, axis=0) # normalize the memberships
+            self.noise_mask = np.ones_like(self.memberships, dtype=np.int32)
+        elif self.datadist == "random":
+            kmeans = FuzzyCMeans(n_clusters=self.n_rings, max_iter=300, m=1.2, eps=0.01)
+            kmeans.fit(x)
 
-        self.centers = kmeans.centroids.astype(
-            np.float64
-        )  # shape (n_rings, n_features)
+            self.centers = kmeans.centroids.astype(
+                np.float64
+            )  # shape (n_rings, n_features)
 
-        # initialize the radii as the average distance of the samples to the centers
-        # (1, n_samples, n_features) x (n_rings, 1, n_features) -> (n_rings, n_samples, n_features)
+            # initialize the radii as the average distance of the samples to the centers
+            # (1, n_samples, n_features) x (n_rings, 1, n_features) -> (n_rings, n_samples, n_features)
 
-        self.memberships = kmeans.membership.astype(
-            np.float64
-        )  # shape (n_rings, n_samples)
+            self.memberships = kmeans.membership.astype(
+                np.float64
+            )  # shape (n_rings, n_samples)
 
-        self.noise_mask = np.ones_like(self.memberships, dtype=np.int32)
-        # only take into account distances to the center of the cluster
-        self.radii = self.get_new_radii(x)
+            self.noise_mask = np.ones_like(self.memberships, dtype=np.int32)
+            # only take into account distances to the center of the cluster
+            self.radii = self.get_new_radii(x)
+        else:
+            raise ValueError("Invalid datadist value. Expected 'concentric' or 'random', got {}".format(self.datadist))
 
         
 
@@ -218,8 +235,6 @@ class NoisyRingsClustering:
         mask = np.broadcast_to(mask, self.memberships.shape) # shape (n_rings, n_samples)
         return mask
 
-
-
     def get_labels(self, include_mask: bool = True) -> np.ndarray:
         """
         Get the hard labels of the samples
@@ -229,5 +244,10 @@ class NoisyRingsClustering:
             centers: array of shape (n_samples, n_features)
             memberships: array of shape (n_samples) with the index of the cluster for each sample
         """
-        return self.radii, self.centers, (self.memberships * self.noise_mask if include_mask else self.memberships)
+        hard_memberships = np.argmax(self.memberships, axis=0)
+        # first, since noise mask is repeated across the axis 0, we can just take the first row
+        noise_mask = self.noise_mask[0]
+        hard_memberships[noise_mask == 0] = NOISE
+        logger.info("Total noise samples: {}".format(np.sum(noise_mask == 0)))
+        return self.radii, self.centers, hard_memberships
  
