@@ -230,7 +230,7 @@ class NoisyRingsClustering:
             return np.ones_like(self.memberships)
     
         ringdists = self._dist_to_rings(x, self.centers, self.radii) # shape (n_rings, n_samples)
-        mask = np.logical_not(np.all(ringdists > (self.noise_distance_threshold * self.radii[:, None] + self.radii[:, None]), axis=0)).astype(np.int32) # shape (n_samples)
+        mask = np.logical_not(np.all(ringdists > (self.noise_distance_threshold), axis=0)).astype(np.int32) # shape (n_samples)
         
         mask = np.broadcast_to(mask, self.memberships.shape) # shape (n_rings, n_samples)
         return mask
@@ -247,6 +247,8 @@ class NoisyRingsClustering:
         hard_memberships = np.argmax(self.memberships, axis=0)
         # first, since noise mask is repeated across the axis 0, we can just take the first row
         noise_mask = self.noise_mask[0]
+        for i in range(self.noise_mask.shape[0]):
+            assert np.allclose(noise_mask, self.noise_mask[i])
         hard_memberships[noise_mask == 0] = NOISE
         logger.info("Total noise samples: {}".format(np.sum(noise_mask == 0)))
         return self.radii, self.centers, hard_memberships

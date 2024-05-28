@@ -8,6 +8,9 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{float}
+
 
 \usetikzlibrary{calc}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
@@ -38,6 +41,14 @@ We are presented with the following problem: we have a dataset that is composed 
 each corresponding to a different ring. The Fuzzy K-Rings algorithm, also known as the Fuzzy C-Shells algorithm, is a clustering algorithm that has been used in the past
 for similar tasks. The algorithm is inspired on the Fuzzy C-Means algorithm, and was introduced, altough in different variations, in \cite{308484} and \cite{DAVE1992713}.
 From now on, we'll refer to the algorithm as Fuzzy K-Rings (FKR).
+% here a plot from plots/noisy_rings.pgf
+\begin{figure}[H]
+    \centering
+    \resizebox{0.9\linewidth}{!}{\input{plots/noisy_rings.pgf}}
+    \label{fig:noisy_rings}
+    \caption{Example of a dataset with different rings and noise, and their correct classification.}
+\end{figure}
+
 
 \section{Fuzzy Clustering Algorithms}
 In hard clustering algorithms, each data point is assigned to a single cluster. In contrast, fuzzy algorithms assign a membership degree to each data point for each cluster.
@@ -194,7 +205,8 @@ We use the following convergence criterion:
 \end{equation}
 Where $\hat{u_{ij}}$ is the membership degree of the previous iteration, and $u_{ij}$ is the membership degree of the current iteration,
 and $\epsilon$ is a small value, usually $10^{-3}$, given as a hyperparameter.
-
+That is, after each update, we check for the difference between the membership degrees of the current and previous iteration, and if the difference is smaller than $\epsilon$,
+we break the loop. We do not stop it completely, but we will get to that later.
 \subsection{Overall Steps}
 The overall steps of the algorithm are as follows:
 \begin{enumerate}
@@ -207,6 +219,26 @@ The overall steps of the algorithm are as follows:
     \item Return the membership degrees $U$, the cluster centers $V$, and the cluster radii $R$.
     \item End.
 \end{enumerate}
+
+\subsection{Background noise detection}
+In the case of noisy data, the algorithm can be sensitive to noise. To mitigate this, we propose an aditional step.
+\begin{figure}[H]
+    \centering
+    \resizebox{0.9\linewidth}{!}{\input{plots/noisy_bg.pgf}}
+    \label{fig:noisy_bg}
+    \caption{Example of a dataset with different rings and background noise, and their correct classification (purple means noise).}
+\end{figure}
+The algorithm takes an additional noise threshold, which is the maximum distance a point can have to a cluster center to be considered noise.
+We can express the equation as:
+\begin{equation}
+    \text{is\_noise}(X_j) = \begin{cases}
+        1 & \text{if } \min_{i} d_{ij} > \text{noise\_distance\_threshold} \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+When computing the centers and radii, points that are considered noise are ignored, that is, all their weights are set to zero.
+It is important to note that it is only for the computation of the centers and radii. The stored membership degrees are not modified.
+This is done with the use of a mask, where 1 means not noise, and 0 means noise, and then multiplying the mask by the membership degrees and the distances.
 
 \subsection{Implementation}
 All of the above steps can be formulated as Tensor/NDArray operations, with no need for explicit loops,

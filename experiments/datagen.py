@@ -39,7 +39,7 @@ def random_circles(
     return np.concatenate(data, axis=0)
 
 
-def random_noise(center_delimiters, n_samples, noise=0.3):
+def random_noise(center_delimiters, n_samples):
     # generates random noise between the center_delimiters
     min_x = min(center_delimiters[:, 0])
     max_x = max(center_delimiters[:, 0])
