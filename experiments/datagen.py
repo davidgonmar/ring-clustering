@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def random_circle(
+def noisy_circle(
     base_position: np.ndarray, radius: float, n_samples: int, noise: float = 0.1
 ):
     theta = np.linspace(0, 2 * np.pi, n_samples)
@@ -9,7 +9,6 @@ def random_circle(
     x = base_position[0] + r * np.cos(theta)
     y = base_position[1] + r * np.sin(theta)
     return np.stack([x, y], axis=1)
-
 
 def random_circles(
     center_delimiters, min_max_radius, n_samples_per_circle, n_rings, noise=0.3
@@ -32,11 +31,9 @@ def random_circles(
             for _ in range(n_rings)
         ]
     )
-    print(centers)
-
     for center in centers:
         radius = np.random.uniform(min_max_radius[0], min_max_radius[1])
-        circle_data = random_circle(center, radius, n_samples_per_circle, noise)
+        circle_data = noisy_circle(center, radius, n_samples_per_circle, noise)
         data.append(circle_data)
 
     return np.concatenate(data, axis=0)

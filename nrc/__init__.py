@@ -3,7 +3,7 @@ import logging
 from nrc.fuzzycmeans import FuzzyCMeans
 
 logging.basicConfig(level=logging.INFO)
-
+logger = logging.getLogger(__name__)
 
 class NoisyRingsClustering:
     def __init__(
@@ -12,6 +12,8 @@ class NoisyRingsClustering:
         q: float,
         convergence_eps: float = 0.01,
         max_iters: int = 200,
+        noise_entropy_threshold: float = 0.5,
+        max_noise_checks: int = 20,
     ) -> None:
         self.n_rings = n_rings
         self.fitted = False
@@ -19,6 +21,8 @@ class NoisyRingsClustering:
         self.max_iters = max_iters
         self.convergence_eps = convergence_eps
         self.eps = 1e-10
+        self.noise_entropy_threshold = noise_entropy_threshold
+        self.max_noise_checks = max_noise_checks
 
     def _eucledian_dist(
         self, x: np.ndarray, y: np.ndarray, axis: int = 1
@@ -100,16 +104,16 @@ class NoisyRingsClustering:
         Returns:
             array of shape (n_rings)
         """
-        # warning! not ring distances, but distances to the centers !!!
-        # self.memberships shape is (n_rings, n_samples)
-        assert np.sum(self.memberships, axis=0).all() == 1
+        memberships = self.memberships
+        # apply mask to the memberships
+        memberships = memberships * self.noise_mask
         center_dists = self._eucledian_dist(
             samples[None, ...], self.centers[:, None, :], axis=2
         ).astype(
             np.float64
         )  # shape (n_rings, n_samples)
-        return np.sum((self.memberships**self.q) * center_dists, axis=1) / np.sum(
-            self.memberships**self.q, axis=1
+        return np.sum((memberships**self.q) * center_dists, axis=1) / np.sum(
+            memberships**self.q, axis=1
         )  # shape (n_rings)
 
     def get_new_centers(self, samples: np.ndarray) -> np.ndarray:
@@ -122,7 +126,7 @@ class NoisyRingsClustering:
         Returns:
             array of shape (n_rings, n_features)
         """
-        common = self.memberships**self.q  # shape (n_rings, n_samples)
+        common = (self.memberships * self.noise_mask)**self.q  # shape (n_rings, n_samples)
 
         # abuse broadcasting :D
         return np.sum(
@@ -148,7 +152,7 @@ class NoisyRingsClustering:
             x: array of shape (n_samples, n_features)
         """
         # use kmeans to initialize the centers
-
+        
         kmeans = FuzzyCMeans(n_clusters=self.n_rings, max_iter=300, m=1.2, eps=0.01)
         kmeans.fit(x)
 
@@ -163,8 +167,11 @@ class NoisyRingsClustering:
             np.float64
         )  # shape (n_rings, n_samples)
 
+        self.noise_mask = np.ones_like(self.memberships, dtype=np.int32)
         # only take into account distances to the center of the cluster
         self.radii = self.get_new_radii(x)
+
+        
 
     def fit(self, x: np.ndarray) -> None:
         assert x.ndim == 2, "Input data must be 2D, got shape {}".format(x.shape)
@@ -173,64 +180,49 @@ class NoisyRingsClustering:
         self.fitted = True
 
         self._initialize(x)
-
+        noise_checks = 0
+        last_noise_mask = np.zeros_like(self.noise_mask)
         for it in range(self.max_iters):
-            self.radii = self.get_new_radii(x)
             old_memberships = self.memberships
             self.memberships = self.get_new_memberships(x)
-
-            self.centers = self.get_new_centers(x)
+            radii, centers = self.get_new_radii(x), self.get_new_centers(x)
+            self.radii, self.centers = radii, centers
+            
 
             if self._convergence_criterion(self.memberships, old_memberships):
-                logging.info(
-                    "Converged after {} iterations. Stopping early.".format(it)
-                )
-                break
+                noise_mask = self.get_noise_mask(x)
+                if self.max_noise_checks > noise_checks and not np.allclose(noise_mask, last_noise_mask):
+                    self.noise_mask = self.get_noise_mask(x)
+                    logger.info("Converged partly after {} iterations. Recomputing noise mask and continuing. Total noise samples are {}".format(it, np.sum(self.noise_mask == 0) / self.noise_mask.shape[0]))
+                    noise_checks += 1
+                    last_noise_mask = self.noise_mask
+                else:
+                    logger.info(
+                        "Converged after {} iterations. Stopping early.".format(it)
+                    )
+                    break
 
-    def prune_noise(
-        self, threshold: float, reestimate_centers_and_radii: bool = True
-    ) -> np.ndarray:
+    def get_noise_mask(self, x: np.ndarray) -> np.ndarray:
         """
-        Prune the noise from the clusters
-
-        Args:
-            threshold: float, the threshold to prune the noise
+        Mask where 1 means no noise and 0 means noise
         """
-        # get the maximum membership for each sample
+        # in order to detect noise, we'll check for the entropy of the memberships for each sample
+        # if the entropy is high, then the sample is noisy
+        # if the entropy is low, then the sample belongs to a cluster
 
-        # prune ones with distance to radius > averagedist + threshold
+        entry_entropies = -np.sum(self.memberships * np.log(self.memberships), axis=0) # shape (n_samples)
 
-        ringdists = self._dist_to_rings(
-            self.x, self.centers, self.radii
-        )  # shape (n_rings, n_samples)
-        avg_ringdist_per_cluster = np.mean(ringdists, axis=1)
-        mask = np.ones_like(
-            ringdists[1], dtype=bool
-        )  # indicates which samples are not noise with a 1
+        mask = np.ones_like(self.memberships, dtype=np.int32)
 
-        # noise -> distance to the center is larger than the (average distance to ring * threshold)
-        for i in range(self.n_rings):
-            # only take into account samples belonging to the cluster
-            samplemasks = np.argmax(self.memberships, axis=0) == i
-            mask = np.logical_and(
-                mask, ringdists[i] < avg_ringdist_per_cluster[i] * threshold
-            )
-            mask = np.logical_or(mask, samplemasks)
+        entry_entropies = np.broadcast_to(entry_entropies[None, ...], self.memberships.shape) # shape (n_rings, n_samples)
 
-        self.x = self.x[mask]
-
-        self.memberships[:, np.logical_not(mask)] = -1
-        if reestimate_centers_and_radii:
-            old_memberships = self.memberships
-            self.memberships = self.memberships[:, mask]
-            self.centers = self.get_new_centers(self.x)
-            self.radii = self.get_new_radii(self.x)
-
-            self.memberships = old_memberships
+        mask[entry_entropies > self.noise_entropy_threshold] = 0 # threshold the entropy to detect noise
 
         return mask
 
-    def get_labels(self) -> np.ndarray:
+
+
+    def get_labels(self, include_mask: bool = True) -> np.ndarray:
         """
         Get the hard labels of the samples
 
@@ -239,4 +231,5 @@ class NoisyRingsClustering:
             centers: array of shape (n_samples, n_features)
             memberships: array of shape (n_samples) with the index of the cluster for each sample
         """
-        return self.radii, self.centers, self.memberships
+        return self.radii, self.centers, (self.memberships * self.noise_mask if include_mask else self.memberships)
+ 
