@@ -12,7 +12,8 @@ class NoisyRingsClustering:
         q: float,
         convergence_eps: float = 0.01,
         max_iters: int = 200,
-        noise_entropy_threshold: float = 0.5,
+        noise_distance_threshold: float = 0.1,
+        apply_noise_removal: bool = True,
         max_noise_checks: int = 20,
     ) -> None:
         self.n_rings = n_rings
@@ -21,8 +22,9 @@ class NoisyRingsClustering:
         self.max_iters = max_iters
         self.convergence_eps = convergence_eps
         self.eps = 1e-10
-        self.noise_entropy_threshold = noise_entropy_threshold
+        self.noise_distance_threshold = noise_distance_threshold
         self.max_noise_checks = max_noise_checks
+        self.apply_noise_removal = apply_noise_removal
 
     def _eucledian_dist(
         self, x: np.ndarray, y: np.ndarray, axis: int = 1
@@ -113,7 +115,7 @@ class NoisyRingsClustering:
             np.float64
         )  # shape (n_rings, n_samples)
         return np.sum((memberships**self.q) * center_dists, axis=1) / np.sum(
-            memberships**self.q, axis=1
+            memberships**self.q + self.eps, axis=1
         )  # shape (n_rings)
 
     def get_new_centers(self, samples: np.ndarray) -> np.ndarray:
@@ -175,7 +177,6 @@ class NoisyRingsClustering:
 
     def fit(self, x: np.ndarray) -> None:
         assert x.ndim == 2, "Input data must be 2D, got shape {}".format(x.shape)
-        n_samples, n_features = x.shape
         self.x = x
         self.fitted = True
 
@@ -206,18 +207,15 @@ class NoisyRingsClustering:
         """
         Mask where 1 means no noise and 0 means noise
         """
-        # in order to detect noise, we'll check for the entropy of the memberships for each sample
-        # if the entropy is high, then the sample is noisy
-        # if the entropy is low, then the sample belongs to a cluster
-
-        entry_entropies = -np.sum(self.memberships * np.log(self.memberships), axis=0) # shape (n_samples)
-
-        mask = np.ones_like(self.memberships, dtype=np.int32)
-
-        entry_entropies = np.broadcast_to(entry_entropies[None, ...], self.memberships.shape) # shape (n_rings, n_samples)
-
-        mask[entry_entropies > self.noise_entropy_threshold] = 0 # threshold the entropy to detect noise
-
+        # a point is considered noise if it's distance to all rings is
+        
+        if not self.apply_noise_removal:
+            return np.ones_like(self.memberships)
+    
+        ringdists = self._dist_to_rings(x, self.centers, self.radii) # shape (n_rings, n_samples)
+        mask = np.logical_not(np.all(ringdists > (self.noise_distance_threshold * self.radii[:, None] + self.radii[:, None]), axis=0)).astype(np.int32) # shape (n_samples)
+        
+        mask = np.broadcast_to(mask, self.memberships.shape) # shape (n_rings, n_samples)
         return mask
 
 
