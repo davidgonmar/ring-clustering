@@ -1,12 +1,15 @@
 import numpy as np
 
-_vibrant_colors = np.array([
-    [0.8, 0.2, 0.2],
-    [0.2, 0.8, 0.2],
-    [0.2, 0.2, 0.8], 
-    [0.8, 0.8, 0.2],
-    [0.8, 0.2, 0.8], 
-])
+_vibrant_colors = np.array(
+    [
+        [0.8, 0.2, 0.2],
+        [0.2, 0.8, 0.2],
+        [0.2, 0.2, 0.8],
+        [0.8, 0.8, 0.2],
+        [0.8, 0.2, 0.8],
+    ]
+)
+
 
 def get_vibrant_colors(n: int) -> np.ndarray:
     """

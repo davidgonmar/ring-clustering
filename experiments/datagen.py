@@ -10,6 +10,7 @@ def noisy_circle(
     y = base_position[1] + r * np.sin(theta)
     return np.stack([x, y], axis=1)
 
+
 def random_circles(
     center_delimiters, min_max_radius, n_samples_per_circle, n_rings, noise=0.3
 ):
