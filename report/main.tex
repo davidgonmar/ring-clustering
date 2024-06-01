@@ -233,18 +233,6 @@ Where $\hat{u_{ij}}$ is the membership degree of the previous iteration, and $u_
 and $\epsilon$ is a small value, usually $10^{-3}$, given as a hyperparameter.
 That is, after each update, we check for the difference between the membership degrees of the current and previous iteration, and if the difference is smaller than $\epsilon$,
 we break the loop. We do not stop it completely, but we will get to that later.
-\subsection{Overall Steps}
-The overall steps of the algorithm are as follows:
-\begin{enumerate}
-    \item Initialize the parameters $U$, $V$, and $R$.
-    \item While the convergence criterion is not met:
-    \begin{enumerate}
-        \item Update the membership degrees $U$.
-        \item Update the cluster radii $R$ and centers $V$ using the equations \eqref{eq:d_dr} and \eqref{eq:r_i}.
-    \end{enumerate}
-    \item Return the membership degrees $U$, the cluster centers $V$, and the cluster radii $R$.
-    \item End.
-\end{enumerate}
 
 \subsection{Background noise detection}
 In the case of noisy data, the algorithm can be sensitive to noise. To mitigate this, we propose an aditional step.
@@ -266,10 +254,26 @@ When computing the centers and radii, points that are considered noise are ignor
 It is important to note that it is only for the computation of the centers and radii. The stored membership degrees are not modified.
 This is done with the use of a mask, where 1 means not noise, and 0 means noise, and then multiplying the mask by the membership degrees and the distances.
 
+
+\subsection{Overall Steps}
+The overall steps of the algorithm are as follows:
+\begin{enumerate}
+    \item Initialize the parameters $U$, $V$, and $R$.
+    \item While iter < max\_iter:
+    \begin{enumerate}
+        \item Update the membership degrees $U$.
+        \item Update the cluster radii $R$ and centers $V$ using the equations \eqref{eq:d_dr} and \eqref{eq:r_i}.
+        \item If convergence criterion is met, compute the noise mask, and continue to the next step.
+        \item If convergence criterion is met, and the noise mask is not the same as the old one, go to the start of the loop.
+        \item Else, break the loop.
+    \end{enumerate}
+    \item Return the membership degrees $U$, the cluster centers $V$, and the cluster radii $R$.
+\end{enumerate}
+
 \subsection{Obtaining the results}
 After the algorithm has converged or we have reached the maximum number of iterations, we can obtain the results.
 Recall that the membership degree can be seen as 'how much a point belongs to a cluster', and each vector can be seen as a probability distribution.
-Having this in mind, there are multiple ways we can obtain the results:
+Having this in mind, there are multiple ways we could obtain the results:
 \begin{enumerate}
     \item We can assign each point to the cluster with the highest membership degree.
     \item We can sample from a multinomial distribution with the membership degrees as the probabilities.
