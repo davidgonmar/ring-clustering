@@ -11,13 +11,20 @@ EXPERIMENTS_PATH = "./experiments"
 
 @dataclass
 class ExperimentParams:
+    # data
     data_filename: str
+
+    # model
     n_rings: int
     q: float
     convergence_eps: float
     max_iters: int
     noise_entropy_threshold: float
     max_noise_checks: int
+
+    # generation params
+    n_background_noise_samples: int
+    circles_noise: float
 
 
 def save_np_to_csv(data: np.ndarray, filename: str) -> None:
@@ -38,7 +45,7 @@ def load_experiment_params(filename: str) -> dict:
         return json.load(f)
 
 
-def save_experiment(model: NoisyRingsClustering, data: np.ndarray, name: str) -> None:
+def save_experiment(model: NoisyRingsClustering, data: np.ndarray, name: str, extra_params: dict) -> None:
     params = ExperimentParams(
         data_filename=f"{DATA_PATH}/{name}.csv",
         n_rings=model.n_rings,
@@ -47,6 +54,8 @@ def save_experiment(model: NoisyRingsClustering, data: np.ndarray, name: str) ->
         max_iters=model.max_iters,
         noise_entropy_threshold=model.noise_entropy_threshold,
         max_noise_checks=model.max_noise_checks,
+        n_background_noise_samples=extra_params["n_background_noise_samples"],
+        circles_noise=extra_params["circles_noise"],
     )
     save_np_to_csv(data, params.data_filename)
     save_experiment_params(params.__dict__, f"{EXPERIMENTS_PATH}/{name}.json")

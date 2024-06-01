@@ -19,7 +19,7 @@ class NoisyRingsClustering:
         noise_distance_threshold: float = 0.1,
         apply_noise_removal: bool = True,
         max_noise_checks: int = 20,
-        datadist: Literal["concentric", "random"] = "random",
+        init_method: Literal["fuzzycmeans", "concentric"] = "fuzzycmeans",
     ) -> None:
         self.n_rings = n_rings
         self.fitted = False
@@ -30,7 +30,7 @@ class NoisyRingsClustering:
         self.noise_distance_threshold = noise_distance_threshold
         self.max_noise_checks = max_noise_checks
         self.apply_noise_removal = apply_noise_removal
-        self.datadist = datadist
+        self.init_method = init_method
 
     def _eucledian_dist(
         self, x: np.ndarray, y: np.ndarray, axis: int = 1
@@ -163,7 +163,7 @@ class NoisyRingsClustering:
         """
         # use kmeans to initialize the centers
 
-        if self.datadist == "concentric":
+        if self.init_method == "concentric":
             # in the case of concentric rings, we can initialize the centers as the mean of the samples
             self.centers = np.mean(x, axis=0)[None, ...].repeat(self.n_rings, axis=0)
             # initialize the radii as random values between min and max distance to the center
@@ -175,7 +175,7 @@ class NoisyRingsClustering:
                 self.memberships, axis=0
             )  # normalize the memberships
             self.noise_mask = np.ones_like(self.memberships, dtype=np.int32)
-        elif self.datadist == "random":
+        elif self.init_method == "fuzzycmeans":
             kmeans = FuzzyCMeans(n_clusters=self.n_rings, max_iter=300, m=1.2, eps=0.01)
             kmeans.fit(x)
 
@@ -195,8 +195,8 @@ class NoisyRingsClustering:
             self.radii = self.get_new_radii(x)
         else:
             raise ValueError(
-                "Invalid datadist value. Expected 'concentric' or 'random', got {}".format(
-                    self.datadist
+                "Invalid datadist value. Expected 'concentric' or 'fuzzycmeans', got {}".format(
+                    self.init_method
                 )
             )
 
