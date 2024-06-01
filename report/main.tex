@@ -284,7 +284,7 @@ As for the radius and the center, obtaining them is a direct result of the algor
 
 \subsection{Implementation}
 \subsubsection{Data Structures}
-We implement the algorithm in Python, using the NumPy library. The state of the algorithm is stored in three matrices:
+We implement the algorithm in Python, using the NumPy \cite{harris2020array} library. The state of the algorithm is stored in three matrices:
 \begin{itemize}
     \item $U$: A matrix of size $k \times n$, where $n$ is the number of data samples, and $k$ is the number of clusters. It stores the membership degrees.
     \item $V$: A matrix of size $k \times d$, where $d$ is the number of dimensions of the data samples. It stores the cluster centers.
@@ -293,7 +293,7 @@ We implement the algorithm in Python, using the NumPy library. The state of the 
 \subsubsection{Pseudocode}
 All of the above steps can be formulated as Tensor/NDArray operations, with no need for explicit loops,
 by defining the different operations as element-wise operations, tensor multiplications and exploiting
-expansion and broadcasting rules as needed. Code is shown at \cite{b1}.
+expansion and broadcasting rules as needed. Code is shown at \cite{github}.
 This allows to exploit the parallelism of modern computing frameworks, like NumPy, Eigen, or PyTorch.
 The algorithm can be implemented with the following pseudocode:
 \begin{verbatim}
@@ -332,7 +332,7 @@ We use the following metrics to evaluate the performance of the algorithm:
     Recall that we could classify some points as noise. In the case of a noise point, distance returns 0, that is,
     we do not take noise points into account when computing the SDE.
 \end{itemize}
-On the other hand, we are also interested in getting the lowest runtime possible. We measure the runtime of the algorithm in seconds, as well as the total number of iterations it takes to converge.
+On the other hand, we are also interested in getting the lowest runtime possible. We measure the runtime of the algorithm, as well as the total number of iterations it takes to converge.
 
 \subsection{Results}
 We conducted different experiments to test the performance of the algorithm. We noticed that, given no background noise, the algorithm performs well with

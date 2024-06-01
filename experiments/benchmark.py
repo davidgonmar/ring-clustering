@@ -1,6 +1,11 @@
 import timeit
 from experiments.utils import load_experiment
 from dataclasses import dataclass
+import numpy as np
+import logging
+
+# disable logging
+logging.disable(logging.CRITICAL)
 
 
 @dataclass
@@ -8,7 +13,7 @@ class ExperimentResults:
     error: float
     radii: list
     centers: list
-    memberships: list
+    labels: list
     time: float
 
 
@@ -19,24 +24,42 @@ def benchmark(func, *args, **kwargs):
     return res, end - start
 
 
-def test_experiment(expname: str):
-    model, data = load_experiment(expname)
+def geterror(radii, centers, labels, data):
+    # error is defined as the sum of the distances between the centers and the radii for each ring
 
-    _, time = benchmark(model.fit(data))
+    error = 0
+    total_points = 0
+
+    for i in range(len(data)):
+        ringidx = labels[i]
+        if ringidx == -1:
+            continue  # ignore noise points
+        center = centers[ringidx]
+        radius = radii[ringidx]
+
+        error += np.abs(np.linalg.norm(data[i] - center) - radius)
+        total_points += 1
+
+    return error / total_points
+
+
+def test_experiment(expname: str):
+    model, data, _ = load_experiment(expname)
+
+    _, time = benchmark(lambda: model.fit(data))
 
     # Get the clustering results
-    radii, centers, memberships = model.get_labels()
+    radii, centers, labels = model.get_labels()
     n_rings = model.n_rings
-    error = 1
+    error = geterror(radii, centers, labels, data)
 
-    return ExperimentResults(error, radii, centers, memberships, time)
+    return ExperimentResults(error, radii, centers, labels, time)
 
 
 def main():
     # set current working directory to current file
     # from ./experiments read all filenames with no json extension
     import os
-    import json
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -52,7 +75,7 @@ def main():
     for expname in experiment_names:
         results[expname] = test_experiment(expname)
 
-    print(json.dumps(results, indent=4))
+    print(list(map(lambda x: (x, results[x].time, results[x].error), results.keys())))
 
 
 if __name__ == "__main__":

@@ -19,12 +19,15 @@ class ExperimentParams:
     q: float
     convergence_eps: float
     max_iters: int
-    noise_entropy_threshold: float
+    noise_distance_threshold: float
     max_noise_checks: int
+    apply_noise_removal: bool
+    init_method: str
 
     # generation params
-    n_background_noise_samples: int
+    n_background_noise: int
     circles_noise: float
+    n_samples_per_ring: int
 
 
 def save_np_to_csv(data: np.ndarray, filename: str) -> None:
@@ -45,23 +48,28 @@ def load_experiment_params(filename: str) -> dict:
         return json.load(f)
 
 
-def save_experiment(model: NoisyRingsClustering, data: np.ndarray, name: str, extra_params: dict) -> None:
+def save_experiment(
+    model: NoisyRingsClustering, data: np.ndarray, name: str, extra_params: dict
+) -> None:
     params = ExperimentParams(
         data_filename=f"{DATA_PATH}/{name}.csv",
         n_rings=model.n_rings,
         q=model.q,
         convergence_eps=model.convergence_eps,
         max_iters=model.max_iters,
-        noise_entropy_threshold=model.noise_entropy_threshold,
+        noise_distance_threshold=model.noise_distance_threshold,
         max_noise_checks=model.max_noise_checks,
-        n_background_noise_samples=extra_params["n_background_noise_samples"],
+        apply_noise_removal=model.apply_noise_removal,
+        init_method=model.init_method,
+        n_background_noise=extra_params["n_background_noise"],
         circles_noise=extra_params["circles_noise"],
+        n_samples_per_ring=extra_params["n_samples_per_ring"],
     )
     save_np_to_csv(data, params.data_filename)
     save_experiment_params(params.__dict__, f"{EXPERIMENTS_PATH}/{name}.json")
 
 
-def load_experiment(name: str) -> (NoisyRingsClustering, np.ndarray):
+def load_experiment(name: str) -> (NoisyRingsClustering, np.ndarray, ExperimentParams):
     params = load_experiment_params(f"{EXPERIMENTS_PATH}/{name}.json")
     data = load_np_from_csv(params["data_filename"])
     model = NoisyRingsClustering(
@@ -69,7 +77,10 @@ def load_experiment(name: str) -> (NoisyRingsClustering, np.ndarray):
         q=params["q"],
         convergence_eps=params["convergence_eps"],
         max_iters=params["max_iters"],
-        noise_entropy_threshold=params["noise_entropy_threshold"],
+        noise_distance_threshold=params["noise_distance_threshold"],
         max_noise_checks=params["max_noise_checks"],
+        apply_noise_removal=params["apply_noise_removal"],
+        init_method=params["init_method"],
     )
-    return model, data
+    config = ExperimentParams(**params)
+    return model, data, config
