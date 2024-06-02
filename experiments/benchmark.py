@@ -10,6 +10,32 @@ from tabulate import tabulate
 logging.disable(logging.CRITICAL)
 
 
+configs = {
+    "general": {
+        "subfolder": "general",
+        "cmd": [
+            "n_rings",
+            "samples_per_ring",
+            "rings_noise",
+            "background_noise",
+            "avg_error",
+            "avg_time",
+            "avg_iters",
+            "n_samples",
+        ],
+        "latex": [
+            "n_rings",
+            "rings_noise",
+            "background_noise",
+            "avg_error",
+            "avg_time",
+            "avg_iters",
+            "n_samples",
+        ],
+    }
+}
+
+
 @dataclass
 class ExperimentResults:
     error: float
@@ -70,17 +96,20 @@ def main(args):
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
+    
+    conf = configs[args.cfg]
+    experiment_subfolder = conf["subfolder"]
+
     # Get all the experiment files
     experiment_files = [
         f
-        for f in os.listdir("./experiments/{}/".format(args.sf))
+        for f in os.listdir("./experiments/{}/".format(experiment_subfolder))
         if f.endswith(".json")
     ]
 
-    # prune json extension
     experiment_names = [f[:-5] for f in experiment_files]
-    experiment_subfolder = args.sf
-
+    # prune json extension
+   
     # Run all the experiments
     results = {}
 
@@ -108,33 +137,55 @@ def main(args):
         avg_time = sum(v[1] for v in values) / n_samples
         avg_iters = sum(v[2] for v in values) / n_samples
         samples_per_ring = key.n_samples_per_ring
+
+        data = {
+            "n_rings": n_rings,
+            "samples_per_ring": samples_per_ring,
+            "rings_noise": rings_noise,
+            "background_noise": background_noise,
+            "avg_error": avg_error,
+            "avg_time": avg_time,
+            "avg_iters": avg_iters,
+            "n_samples": n_samples,
+        }
         final_data.append(
-            [
-                n_rings,
-                samples_per_ring,
-                rings_noise,
-                background_noise,
-                avg_error,
-                avg_time,
-                avg_iters,
-                n_samples,
-            ]
+            {
+                "n_rings": n_rings,
+                "samples_per_ring": samples_per_ring,
+                "rings_noise": rings_noise,
+                "background_noise": background_noise,
+                "avg_error": avg_error,
+                "avg_time": avg_time,
+                "avg_iters": avg_iters,
+                "n_samples": n_samples,
+            }
         )
 
-    # Define table headers
-    headers = [
-        "N rings",
-        "Samp per ring",
-        "Rings noise",
-        "Background noise",
-        "Avg Error",
-        "Avg Time",
-        "Iters",
-        "N Samples",
-    ]
+    headers = {
+        "n_rings": "N rings",
+        "samples_per_ring": "Samp per ring",
+        "rings_noise": "Rings noise",
+        "background_noise": "Background noise",
+        "avg_error": "Avg Error",
+        "avg_time": "Avg Time",
+        "avg_iters": "Iters",
+        "n_samples": "N Samples",
 
-    # Print the table
-    print(tabulate(final_data, headers=headers, tablefmt="grid"))
+    }
+    
+    # filter
+    final_data_cmd = [[d[h] for h in conf["cmd"]] for d in final_data]
+    final_data_latex = [[d[h] for h in conf["latex"]] for d in final_data]
+    headers_cmd = [headers[h] for h in conf["cmd"]]
+    headers_latex = [headers[h] for h in conf["latex"]]
+    cmd_table = tabulate(final_data_cmd, headers=headers_cmd, tablefmt="grid")
+    latex_table = tabulate(final_data_latex, headers=headers_latex, tablefmt="latex_raw")
+
+    print(cmd_table)
+
+    with open("results.txt", "w") as f:
+        f.write(latex_table)
+
 
 
 if __name__ == "__main__":
@@ -142,6 +193,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run experiments")
     parser.add_argument(
-        "--sf", type=str, default="general", help="Subfolder to look for experiments"
+        "--cfg", type=str, default="general", help="Subfolder to look for experiments"
     )
     main(parser.parse_args())
