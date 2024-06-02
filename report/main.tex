@@ -492,7 +492,7 @@ For the data generation:
         \hline
         \end{tabular}
     \caption{Results of the needle in the haystack test.}
-    \end{figure*}
+\end{figure*}
 
 For the sake of generality, we used consistent hyperparameters for the general experiments.
 
@@ -510,6 +510,31 @@ For the sake of generality, we used consistent hyperparameters for the general e
 Another task we were interested about was the algorithm ability to, in a dataset with a lot of noise, find a ring. We used the same generation method as the general excentric test,
 but with 200 non-noisy samples for the ring and 100 and 200 background noise samples. We did not try more noise samples because then the ring would be almost irrecognizable.
 The results can be seen in the respective table.
+
+
+\subsubsection{Is the noise detection effective?}
+We conducted a test to see if the noise detection was effective. We used the same generation method as the general excentric test, but with 200 samples for each ring, and 200 background noise samples,
+and a noise threshold of 70. The results can be seen in the respective table.
+As it can be seen, the algorithm detects, on average, more points than it should. However, the error rate is considerably lower than the one without noise removal, at the expense of a higher runtime.
+
+
+\begin{figure*}[!ht]
+    \centering
+    \begin{tabular}{rrrrrrrr}
+    \hline
+           Number of rings &   Ring noise &   Background noise &   Avg. Error &   Avg. Runtime &   Iterations &   Experiments &   Avg. Detected Noise \\
+    \hline
+                         3 &            8 &                200 &      41.4563 &        4.06347 &       7541.3 &            20 &                 242.8 \\
+                         3 &            8 &                200 &      67.6438 &        2.36278 &       4035.1 &            20 &                   0   \\
+    \hline
+    \end{tabular}
+    \caption{Results of the noise detection test.}
+\end{figure*}
+
+\subsubsection{Experiments conclusions}
+In the general tests, we found that the algorithm is able to classify ring-shaped datasets with noise, but it does worse as the noise level and the number of rings increase.
+Moreover, altough the metrics seem correct, it is imporant to mention that it's difficult to quantify the performance of the algorithm with metrics. Sometimes the metric might
+be good, but upon visual inspection, the classification is not good. This is especially true when the noise level is high.
 
 
 \section{Conclusion}

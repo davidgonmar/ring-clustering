@@ -78,6 +78,30 @@ configs = {
             "background_noise",
         ],
     },
+    "bg_noise": {
+        "subfolder": "bg_noise",
+        "cmd": [
+            "n_rings",
+            "samples_per_ring",
+            "rings_noise",
+            "background_noise",
+            "avg_error",
+            "avg_time",
+            "avg_iters",
+            "n_experiments",
+            "avg_detected_noise_n",
+        ],
+        "latex": [
+            "n_rings",
+            "rings_noise",
+            "background_noise",
+            "avg_error",
+            "avg_time",
+            "avg_iters",
+            "n_experiments",
+            "avg_detected_noise_n",
+        ],
+    },
 }
 
 

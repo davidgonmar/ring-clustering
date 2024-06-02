@@ -106,7 +106,7 @@ class NoisyRingsClustering:
         """
 
         ring_dists = (
-            self._dist_to_rings(samples, self.centers, self.radii) + self.eps
+            self._dist_to_rings(samples, self.centers, self.radii) ** 2 + self.eps
         )  # shape (n_rings, n_samples)
 
         # sum over the clusters, to compute, for each sample, the sum of the distances to each cluster
@@ -236,7 +236,7 @@ class NoisyRingsClustering:
                 if self.max_noise_checks > noise_checks and not np.allclose(
                     noise_mask, last_noise_mask
                 ):
-                    self.noise_mask = self.get_noise_mask(x)
+                    self.noise_mask = noise_mask
                     logger.info(
                         "[NoisyRingsClustering] Converged partly after {} iterations. Recomputing noise mask and continuing. Total noise samples are {}".format(
                             it, np.sum(self.noise_mask == 0) / self.noise_mask.shape[0]
