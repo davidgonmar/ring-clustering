@@ -225,6 +225,13 @@ class NoisyRingsClustering:
             self.memberships = self._get_new_memberships(x)
             self.radii, self.centers = self._get_new_radii(x), self._get_new_centers(x)
             if self._convergence_criterion(self.memberships, old_memberships):
+                if not self.apply_noise_removal:
+                    logger.info(
+                        "[NoisyRingsClustering] Converged after {} iterations. Stopping early.".format(
+                            it
+                        )
+                    )
+                    break
                 noise_mask = self._get_noise_mask(x)
                 if self.max_noise_checks > noise_checks and not np.allclose(
                     noise_mask, last_noise_mask
