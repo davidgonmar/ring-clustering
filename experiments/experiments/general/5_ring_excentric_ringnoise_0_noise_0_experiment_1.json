@@ -1,0 +1,14 @@
+{
+  "data_filename": "./data/general/5_ring_excentric_ringnoise_0_noise_0_experiment_1.csv",
+  "n_rings": 5,
+  "q": 1.1,
+  "convergence_eps": 1e-5,
+  "max_iters": 10000,
+  "noise_distance_threshold": 100,
+  "max_noise_checks": 20,
+  "apply_noise_removal": true,
+  "init_method": "fuzzycmeans",
+  "n_background_noise": 0,
+  "circles_noise": 0,
+  "n_samples_per_ring": 100
+}

@@ -83,10 +83,14 @@ def load_experiment_params(filename: str) -> dict:
 
 
 def save_experiment(
-    model: NoisyRingsClustering, data: np.ndarray, name: str, extra_params: dict
+    model: NoisyRingsClustering,
+    data: np.ndarray,
+    name: str,
+    subfolder: str,
+    extra_params: dict,
 ) -> None:
     params = ExperimentParams(
-        data_filename=f"{DATA_PATH}/{name}.csv",
+        data_filename=f"{DATA_PATH}/{subfolder}/{name}.csv",
         n_rings=model.n_rings,
         q=model.q,
         convergence_eps=model.convergence_eps,
@@ -100,11 +104,15 @@ def save_experiment(
         n_samples_per_ring=extra_params["n_samples_per_ring"],
     )
     save_np_to_csv(data, params.data_filename)
-    save_experiment_params(params.__dict__, f"{EXPERIMENTS_PATH}/{name}.json")
+    save_experiment_params(
+        params.__dict__, f"{EXPERIMENTS_PATH}/{subfolder}/{name}.json"
+    )
 
 
-def load_experiment(name: str) -> (NoisyRingsClustering, np.ndarray, ExperimentParams):
-    params = load_experiment_params(f"{EXPERIMENTS_PATH}/{name}.json")
+def load_experiment(
+    name: str, subfolder: str
+) -> (NoisyRingsClustering, np.ndarray, ExperimentParams):
+    params = load_experiment_params(f"{EXPERIMENTS_PATH}/{subfolder}/{name}.json")
     data = load_np_from_csv(params["data_filename"])
     model = NoisyRingsClustering(
         n_rings=params["n_rings"],

@@ -48,8 +48,8 @@ def geterror(radii, centers, labels, data):
     return error / total_points
 
 
-def test_experiment(expname: str):
-    model, data, cfg = load_experiment(expname)
+def test_experiment(expname: str, subdolder: str):
+    model, data, cfg = load_experiment(expname, subdolder)
 
     _, time = benchmark(lambda: model.fit(data))
 
@@ -70,22 +70,22 @@ def main(args):
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    startswith = args.pattern
     # Get all the experiment files
     experiment_files = [
         f
-        for f in os.listdir("./experiments")
-        if f.startswith(startswith) and f.endswith(".json")
+        for f in os.listdir("./experiments/{}/".format(args.sf))
+        if f.endswith(".json")
     ]
 
     # prune json extension
     experiment_names = [f[:-5] for f in experiment_files]
+    experiment_subfolder = args.sf
 
     # Run all the experiments
     results = {}
 
     for expname in experiment_names:
-        results[expname] = test_experiment(expname)
+        results[expname] = test_experiment(expname, experiment_subfolder)
 
     grouped_data = defaultdict(list)
 
@@ -140,9 +140,8 @@ def main(args):
 if __name__ == "__main__":
     import argparse
 
-    # the 'pattern' argument looks for a file pattern in the experiments directory. its optional
     parser = argparse.ArgumentParser(description="Run experiments")
     parser.add_argument(
-        "--pattern", type=str, default="", help="Run experiments with this pattern"
+        "--sf", type=str, default="general", help="Subfolder to look for experiments"
     )
     main(parser.parse_args())
