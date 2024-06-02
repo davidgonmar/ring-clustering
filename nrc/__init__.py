@@ -209,7 +209,7 @@ class NoisyRingsClustering:
         noise_checks = 0
         last_noise_mask = np.zeros_like(self.noise_mask)
         for it in range(self.max_iters):
-            self.last_iteration = it
+            self.last_iter = it
             old_memberships = self.memberships
             self.memberships = self.get_new_memberships(x)
             radii, centers = self.get_new_radii(x), self.get_new_centers(x)

@@ -9,7 +9,7 @@ DATA_PATH = "./data"
 EXPERIMENTS_PATH = "./experiments"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ExperimentParams:
     # data
     data_filename: str
@@ -28,6 +28,40 @@ class ExperimentParams:
     n_background_noise: int
     circles_noise: float
     n_samples_per_ring: int
+
+    def __hash__(self):
+        return hash(
+            (
+                self.n_rings,
+                self.q,
+                self.convergence_eps,
+                self.max_iters,
+                self.noise_distance_threshold,
+                self.max_noise_checks,
+                self.apply_noise_removal,
+                self.init_method,
+                self.n_background_noise,
+                self.circles_noise,
+                self.n_samples_per_ring,
+            )
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, ExperimentParams):
+            return False
+        return (
+            self.n_rings == other.n_rings
+            and self.q == other.q
+            and self.convergence_eps == other.convergence_eps
+            and self.max_iters == other.max_iters
+            and self.noise_distance_threshold == other.noise_distance_threshold
+            and self.max_noise_checks == other.max_noise_checks
+            and self.apply_noise_removal == other.apply_noise_removal
+            and self.init_method == other.init_method
+            and self.n_background_noise == other.n_background_noise
+            and self.circles_noise == other.circles_noise
+            and self.n_samples_per_ring == other.n_samples_per_ring
+        )
 
 
 def save_np_to_csv(data: np.ndarray, filename: str) -> None:
