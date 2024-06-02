@@ -21,7 +21,8 @@ configs = {
             "avg_error",
             "avg_time",
             "avg_iters",
-            "n_samples",
+            "n_experiments",
+            "avg_detected_noise_n",
         ],
         "latex": [
             "n_rings",
@@ -30,10 +31,56 @@ configs = {
             "avg_error",
             "avg_time",
             "avg_iters",
-            "n_samples",
+            "n_experiments",
+            "avg_detected_noise_n",
         ],
-    }
+    },
+    "concentric": {
+        "subfolder": "concentric",
+        "cmd": [
+            "n_rings",
+            "samples_per_ring",
+            "rings_noise",
+            "background_noise",
+            "avg_error",
+            "avg_time",
+            "avg_iters",
+            "n_experiments",
+            "avg_detected_noise_n",
+        ],
+        "latex": [
+            "n_rings",
+            "rings_noise",
+            "background_noise",
+            "avg_error",
+            "avg_time",
+            "avg_iters",
+            "n_experiments",
+            "avg_detected_noise_n",
+        ],
+    },
+    "needle_in_haystack": {
+        "subfolder": "needle_in_haystack",
+        "cmd": [
+            "avg_error",
+            "avg_time",
+            "avg_iters",
+            "n_experiments",
+            "avg_detected_noise_n",
+            "background_noise",
+        ],
+        "latex": [
+            "avg_error",
+            "avg_time",
+            "avg_iters",
+            "n_experiments",
+            "avg_detected_noise_n",
+            "background_noise",
+        ],
+    },
 }
+
+
 
 
 @dataclass
@@ -121,8 +168,9 @@ def main(args):
     for expname in results:
         cfg = results[expname].params
         key = cfg
+        detected_noise_n = len([l for l in results[expname].labels if l == -1])
         grouped_data[key].append(
-            (results[expname].error, results[expname].time, results[expname].iters)
+            (results[expname].error, results[expname].time, results[expname].iters, detected_noise_n)
         )
 
     # Compute averages and prepare data for tabulation
@@ -132,22 +180,12 @@ def main(args):
         n_rings = key.n_rings
         rings_noise = key.circles_noise
         background_noise = key.n_background_noise
-        n_samples = len(values)
-        avg_error = sum(v[0] for v in values) / n_samples
-        avg_time = sum(v[1] for v in values) / n_samples
-        avg_iters = sum(v[2] for v in values) / n_samples
+        n_experiments = len(values)
+        avg_error = sum(v[0] for v in values) / n_experiments
+        avg_time = sum(v[1] for v in values) / n_experiments
+        avg_iters = sum(v[2] for v in values) / n_experiments
         samples_per_ring = key.n_samples_per_ring
-
-        data = {
-            "n_rings": n_rings,
-            "samples_per_ring": samples_per_ring,
-            "rings_noise": rings_noise,
-            "background_noise": background_noise,
-            "avg_error": avg_error,
-            "avg_time": avg_time,
-            "avg_iters": avg_iters,
-            "n_samples": n_samples,
-        }
+        avg_detected_noise_n = sum(v[3] for v in values) / n_experiments
         final_data.append(
             {
                 "n_rings": n_rings,
@@ -157,20 +195,23 @@ def main(args):
                 "avg_error": avg_error,
                 "avg_time": avg_time,
                 "avg_iters": avg_iters,
-                "n_samples": n_samples,
+                "n_experiments": n_experiments,
+                "avg_detected_noise_n": avg_detected_noise_n,
+                "q": key.q,
             }
         )
 
     headers = {
-        "n_rings": "N rings",
-        "samples_per_ring": "Samp per ring",
-        "rings_noise": "Rings noise",
+        "n_rings": "Number of rings",
+        "samples_per_ring": "Samples per ring",
+        "rings_noise": "Ring noise",
         "background_noise": "Background noise",
-        "avg_error": "Avg Error",
-        "avg_time": "Avg Time",
-        "avg_iters": "Iters",
-        "n_samples": "N Samples",
-
+        "avg_error": "Avg. Error",
+        "avg_time": "Avg. Runtime",
+        "avg_iters": "Iterations",
+        "n_experiments": "Experiments",
+        "avg_detected_noise_n": "Avg. Detected Noise",
+        "q": "q",
     }
     
     # filter

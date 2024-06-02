@@ -1,0 +1,1 @@
+{"data_filename": "./data/general/expr20240602093951.csv", "n_rings": 3, "q": 1.1, "convergence_eps": 1e-05, "max_iters": 10000, "noise_distance_threshold": 100, "max_noise_checks": 20, "apply_noise_removal": true, "init_method": "fuzzycmeans", "n_background_noise": 0, "circles_noise": 0, "n_samples_per_ring": 100}

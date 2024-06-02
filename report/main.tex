@@ -320,7 +320,7 @@ fn update_membership(X, V, q):
 We conducted different experiments to test the performance of the algorithm. Given a dataset, that is, a set of points, we could define, informally,
 two types of points, those that belong to a ring, and those that don't belong to any. We call the second one 'background noise' or 'noise' from now on.
 In order to generate the dataset, we generate N rings with n noise. The noise of the rings can be seen as 'imperfection' that would occur in a real dataset.
-Moreover, we generate $N_2$ noise points randomly accross the space.
+Moreover, we generate $N$ noise points randomly accross the space.
 \subsection{Evaluation Metrics}
 We use the following metrics to evaluate the performance of the algorithm:
 \begin{itemize}
@@ -369,42 +369,120 @@ As we can see in the results, both the runtime and performance degrades with hig
 % tik picture
 \begin{figure}[H]
     \centering
-    \resizebox{0.9\linewidth}{!}{\input{plots/4_ring_excentric_ringnoise_20_noise_50_experiment_2.pgf}}
+    \resizebox{0.9\linewidth}{!}{\input{plots/data_example_exc.pgf}}
     \label{fig:excentric_rings}
-    \caption{Example of a dataset with 4 rings, 20 ring noise, 50 background noise, and a good classification.}
+    \caption{Example of a dataset with 4 noisy rings, and background noise, and a good classification.}
 \end{figure}
-
 
 \begin{figure*}[!ht]
 \centering
-\begin{tabular}{rrrrrrr}
+\begin{tabular}{rrrrrrrr}
     \hline
-       N rings &   Rings noise &   Background noise &   Avg Error &   Avg Time &       Iters &   N Samples \\
+       Number of rings &   Ring noise &   Background noise &   Avg. Error &   Avg. Runtime &   Iterations &   Experiments &   Avg. Detected Noise \\
     \hline
-             1 &             0 &                  0 &     1.08838 & 0.00091765 &     2       &           2 \\
-             1 &            20 &                  0 &    18.1971  & 0.0007517  &     2       &           1 \\
-             1 &            20 &                 30 &    18.5382  & 0.00187321 &     5.84615 &          13 \\
-             2 &             0 &                  0 &     6.06266 & 1.33305    &  6002.6     &           5 \\
-             2 &            20 &                  0 &    18.0959  & 0.30551    &  1436.57    &           7 \\
-             2 &            20 &                  0 &    24.5638  & 2.04091    & 10000       &           1 \\
-             2 &            20 &                 10 &    18.5584  & 0.0377052  &   154       &           3 \\
-             2 &            20 &                 30 &    41.7539  & 1.7823     &  7502.75    &           4 \\
-             2 &            20 &                 50 &    33.3655  & 1.60088    &  6681       &           3 \\
-             3 &             0 &                  0 &    16.4274  & 1.98715    &  6005.2     &           5 \\
-             3 &            20 &                  0 &    25.3432  & 2.13128    &  6675.67    &           3 \\
-             3 &            20 &                 30 &    74.6996  & 2.48335    &  7506.75    &           4 \\
-             3 &            20 &                 50 &    44.0436  & 2.61325    &  7534       &           4 \\
-             4 &             0 &                  0 &     9.92773 & 4.57052    & 10000       &           4 \\
-             4 &            20 &                  0 &    35.2127  & 2.40506    &  5038.75    &           4 \\
-             4 &            20 &                 50 &    74.773   & 3.77698    &  7552.5     &           4 \\
-             5 &             0 &                  0 &    30.2353  & 4.92909    &  7580       &           4 \\
-             5 &            20 &                  0 &    27.7939  & 3.35194    &  5041.5     &           4 \\
-             5 &            20 &                 50 &    72.9169  & 7.07606    & 10000       &           4 \\
+                     1 &            0 &                  0 &      1.83853 &    0.000812167 &         2    &             3 &               0       \\
+                     1 &           20 &                  0 &     16.2363  &    0.000727667 &         2    &             3 &               0       \\
+                     1 &           20 &                 20 &     16.1469  &    0.00178713  &         6    &             3 &              18       \\
+                     2 &            0 &                  0 &      1.6219  &    0.499586    &      2505.25 &             4 &               0       \\
+                     2 &           10 &                  0 &     13.9375  &    0.0042801   &        14    &             3 &               0       \\
+                     2 &           20 &                  0 &     16.0684  &    0.692698    &      3359    &             3 &               0       \\
+                     2 &           10 &                 10 &     13.4885  &    0.731724    &      3346.33 &             3 &               3.33333 \\
+                     3 &            0 &                  0 &     74.1423  &    2.47752     &      8005    &             5 &              15.4     \\
+                     3 &           10 &                  0 &     10.2179  &    1.57101     &      5011.5  &             4 &               0       \\
+                     3 &           10 &                 15 &     21.5381  &    2.1628      &      6671.33 &             3 &               3.33333 \\
+                     4 &            0 &                  0 &     28.8584  &    2.72986     &      6010.8  &             5 &               0       \\
+                     4 &           10 &                  0 &     15.5972  &    2.31535     &      5007.75 &             4 &               6.5     \\
+                     4 &           10 &                 10 &     24.6138  &    1.61891     &      3397    &             3 &              64       \\
+                     5 &            0 &                  0 &     13.6484  &    4.82393     &      7523    &             4 &               7       \\
+                     5 &           10 &                  0 &     11.4402  &    6.47775     &     10000    &             2 &               0       \\
+                     5 &           10 &                 10 &     30.3023  &    6.46981     &     10000    &             3 &              34       \\
     \hline
-\end{tabular}
+    \end{tabular}
 \caption{Results of the general test with excentric rings.}
 \end{figure*}
-\vspace{12pt}
+
+\subsubsection{Concentric Rings}
+A concentric ring dataset is a dataset in which all the rings share the same center, and may vary in radius.
+
+The hyperparameters were set as follows:
+
+\begin{itemize}
+    \item q: 1.1
+    \item convergence\_eps: $10^{-5}$
+    \item max\_iters: 10000
+    \item noise\_distance\_threshold: 100
+    \item max\_noise\_checks: 20
+    \item apply\_noise\_removal: True
+    \item init\_method: "concentric"
+\end{itemize}
+
+For the data generation:
+\begin{itemize}
+    \item For each ring, we randomly select a radius between 50 and 1000.
+    \item For each ring, we randomly select 100 samples in the circunference. For each sample, we add a noise with the following equation:
+    \begin{equation}
+        X_{\text{noise}} = X_{\text{ring}} + \text{randn}(0, 1) \cdot \text{noise\_level}
+    \end{equation}
+    Where $X_{\text{ring}}$ is the point in the circunference, and $\text{noise\_level}$ is the noise level, and $\text{randn}(0, 1)$ is a random number from a normal distribution with mean 0 and variance 1.
+    \item To add the background noise, we select N points in a rect centered at $(0, 0)$ with sides of length 1200, sampled from an uniform distribution.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.9\linewidth}{!}{\input{plots/data_example_conc.pgf}}
+    \label{fig:concentric_rings}
+    \caption{Example of a dataset with 4 concentric rings, and background noise, and a good classification.}
+\end{figure}
+
+\begin{figure*}[!ht]
+\centering
+\begin{tabular}{rrrrrrrr}
+    \hline
+       Number of rings &   Ring noise &   Background noise &   Avg. Error &   Avg. Runtime &   Iterations &   Experiments &   Avg. Detected Noise \\
+    \hline
+                     2 &            0 &                  0 &      2.46091 &     0.00138317 &      4       &             3 &                0      \\
+                     2 &           10 &                  0 &      8.34515 &     0.00144163 &      4.33333 &             3 &                0      \\
+                     2 &           10 &                 20 &     27.6871  &     0.739527   &   3339.67    &             3 &               39.3333 \\
+                     3 &            0 &                  0 &      2.77079 &     0.00386943 &      8       &             3 &                0      \\
+                     3 &           10 &                  0 &      8.26071 &     0.00237887 &      5       &             3 &                0      \\
+                     3 &           10 &                 10 &     31.2555  &     1.63057    &   5004.5     &             2 &               33.5    \\
+                     4 &            0 &                  0 &      7.70461 &     0.0523678  &    102       &             3 &                0      \\
+                     4 &           10 &                 10 &    308.983   &     4.96551    &  10000       &             4 &                0      \\
+    \hline
+\end{tabular}
+\caption{Results of the general test with concentric rings.}
+\end{figure*}
+\begin{figure*}[!ht]
+    \centering
+    \begin{tabular}{rrrrrr}
+        \hline
+           Avg. Error &   Avg. Runtime &   Iterations &   Experiments &   Avg. Detected Noise &   Background noise \\
+        \hline
+              4.24471 &     0.00268757 &       7.25   &             4 &                    86 &                100 \\
+             19.0933  &     0.0050642  &      10.3333 &             3 &                   160 &                200 \\
+        \hline
+        \end{tabular}
+    \caption{Results of the needle in the haystack test.}
+    \end{figure*}
+
+It is important to mention that we found the hyperparameters to be sensible. For the sake of generality, we used consistent hyperparameters for the general experiments.
+
+
+\subsubsection{Needle in the Haystack - Finding a ring in a lot of noise}
+
+% figure
+\begin{figure}[H]
+    \centering
+    \resizebox{0.9\linewidth}{!}{\input{plots/needle_haystack.pgf}}
+    \label{fig:needle}
+    \caption{Example of a dataset with a ring in a lot of noise, and background noise, and a good classification.}
+\end{figure}
+
+Another task we were interested about was the algorithm ability to, in a dataset with a lot of noise, find a ring. We used the same generation method as the general excentric test,
+but with 200 non-noisy samples for the ring and 100 and 200 background noise samples. We did not try more noise samples because then the ring would be almost irrecognizable.
+The results can be seen in the following table
+
+
 
 \bibliographystyle{IEEEtran}
 \bibliography{references.bib}
