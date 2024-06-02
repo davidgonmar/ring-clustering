@@ -10,8 +10,8 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \usepackage{float}
-\usepackage{stfloats} 
-
+\usepackage{stfloats}
+\usepackage{hyperref}
 
 \usetikzlibrary{calc}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
@@ -53,7 +53,7 @@ From now on, we'll refer to the algorithm as Fuzzy K-Rings (FKR).
 
 \section{Fuzzy Clustering Algorithms}
 In hard clustering algorithms, each data point is assigned to a single cluster. In contrast, fuzzy algorithms assign a membership degree to each data point for each cluster.
-One of the most popular ones is the Fuzzy C-Means algorithm. A formal description can be found in \cite{bookpatternrecognition} and \cite{BEZDEK1984191}. It can be seen as an optimization problem,
+One of the most popular ones is the Fuzzy C-Means algorithm. A formal description of it can be found in \cite{bookpatternrecognition} and \cite{BEZDEK1984191}. It can be seen as an optimization problem,
 where the objective function is to minimize the following equation:
 \begin{equation}
 J(U, V) = \sum_{i=1}^{n} \sum_{j=1}^{k} (u_{ij})^q d_{ij}^2

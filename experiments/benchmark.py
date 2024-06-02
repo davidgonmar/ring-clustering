@@ -81,8 +81,6 @@ configs = {
 }
 
 
-
-
 @dataclass
 class ExperimentResults:
     error: float
@@ -143,7 +141,6 @@ def main(args):
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    
     conf = configs[args.cfg]
     experiment_subfolder = conf["subfolder"]
 
@@ -156,7 +153,7 @@ def main(args):
 
     experiment_names = [f[:-5] for f in experiment_files]
     # prune json extension
-   
+
     # Run all the experiments
     results = {}
 
@@ -170,7 +167,12 @@ def main(args):
         key = cfg
         detected_noise_n = len([l for l in results[expname].labels if l == -1])
         grouped_data[key].append(
-            (results[expname].error, results[expname].time, results[expname].iters, detected_noise_n)
+            (
+                results[expname].error,
+                results[expname].time,
+                results[expname].iters,
+                detected_noise_n,
+            )
         )
 
     # Compute averages and prepare data for tabulation
@@ -213,20 +215,21 @@ def main(args):
         "avg_detected_noise_n": "Avg. Detected Noise",
         "q": "q",
     }
-    
+
     # filter
     final_data_cmd = [[d[h] for h in conf["cmd"]] for d in final_data]
     final_data_latex = [[d[h] for h in conf["latex"]] for d in final_data]
     headers_cmd = [headers[h] for h in conf["cmd"]]
     headers_latex = [headers[h] for h in conf["latex"]]
     cmd_table = tabulate(final_data_cmd, headers=headers_cmd, tablefmt="grid")
-    latex_table = tabulate(final_data_latex, headers=headers_latex, tablefmt="latex_raw")
+    latex_table = tabulate(
+        final_data_latex, headers=headers_latex, tablefmt="latex_raw"
+    )
 
     print(cmd_table)
 
     with open("results.txt", "w") as f:
         f.write(latex_table)
-
 
 
 if __name__ == "__main__":

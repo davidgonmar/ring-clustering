@@ -22,13 +22,19 @@ class FuzzyCMeans:
     _dist = _euclidean_distance
 
     def __init__(
-        self, n_clusters: int = 3, max_iter: int = 100, m: float = 2, eps: float = 0.01
+        self,
+        n_clusters: int = 3,
+        max_iter: int = 100,
+        m: float = 2,
+        convergence_eps: float = 1e-4,
+        eps: float = 1e-8,
     ):
         self.n_clusters = n_clusters
         self.max_iter = max_iter
         self.m = m
         self.fitted = False
-        self.eps = eps
+        self.convergence_eps = convergence_eps
+        self.eps = 1e-8
 
     def _init_membership(self, n_samples: int) -> np.ndarray:
         """
@@ -72,10 +78,10 @@ class FuzzyCMeans:
             [self._dist(X, c) for c in centroids]
         )  # shape (n_clusters, n_samples)
         dsum_per_cluster = (
-            distances.sum(0, keepdims=True) + 1e-8
+            distances.sum(0, keepdims=True) + self.eps
         )  # avoid div by zero, shape (1, n_samples)
         normalized_dists = (
-            distances / dsum_per_cluster + 1e-8
+            distances / dsum_per_cluster + self.eps
         )  # avoid div by zero, shape (n_clusters, n_samples)
         return 1 / (normalized_dists ** (2 / (self.m - 1)))
 
@@ -101,14 +107,14 @@ class FuzzyCMeans:
         self.fitted = True
         n_samples = X.shape[0]
 
-        # Initialize the centroids and labels
+        # initialize the centroids and labels
         self.membership = self._init_membership(n_samples)
         self.centroids = self._compute_centroids(X, self.membership)
 
         for _ in range(self.max_iter):
             self.centroids = self._compute_centroids(X, self.membership)
             new_membership = self._update_membership(X, self.centroids)
-            if np.allclose(new_membership, self.membership, atol=self.eps):
+            if np.allclose(new_membership, self.membership, atol=self.convergence_eps):
                 logger.info(
                     "[FuzzyCMeans] Converged after {} iterations. Stopping early.".format(
                         _
@@ -129,6 +135,6 @@ class FuzzyCMeans:
             ndarray: the hard labels of the data
         """
         assert self.fitted, "The model has not been fitted yet."
-        return np.argmax(
-            self.membership, axis=0
-        )  # get the index of the maximum value along the rows
+
+        # simply get max value for the memberships of each sample
+        return np.argmax(self.membership, axis=0)
