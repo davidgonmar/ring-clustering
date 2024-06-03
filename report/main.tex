@@ -41,8 +41,9 @@ Fuzzy K-Rings, Fuzzy C-Shells, Clustering, Noisy Data, Ring Clustering, Hypersph
 We are presented with the following problem: we have a dataset that is composed of different rings and noise. Our objective is to classify the points into different clusters,
 each corresponding to a different ring. Fuzzy clustering algorithms, instead of assigning a single cluster to each data point, assign a membership degree to each data point for each cluster. There has been a significant
 amount of work in the past on fuzzy algorithms applied to different types of datasets. The Fuzzy K-Rings algorithm, also known as the Fuzzy C-Shells algorithm, is a clustering algorithm that has been used in the past
-for similar tasks. The algorithm is inspired by the Fuzzy C-Means algorithm, and was introduced, although in different variations, in \cite{308484} and \cite{DAVE1992713}. In this paper,
-we will focus on applying the Fuzzy K-Rings algorithm to the problem of clustering rings in noisy dataset. By noise we mean inconsistency in the rings, or background noise that does not belong to any ring.
+for similar tasks. The algorithm is inspired by the Fuzzy C-Means algorithm, and was introduced, although in different variations, in \cite{308484} and \cite{DAVE1992713}. Other papers that make use of different versions
+of this algorithm are \cite{Pratiwi_2020} and \cite{159056}.
+In this paper, we will focus on applying the Fuzzy K-Rings algorithm to the problem of clustering rings in noisy dataset. By noise we mean inconsistency in the rings, or background noise that does not belong to any ring.
 We will further propose a modification to the algorithm to make it more robust to noise, and conduct various experiments to test the performance of the algorithm under different circumstances.
 
 \section{Fuzzy Clustering Algorithms}
@@ -60,10 +61,10 @@ $U$ is a matrix of size $n \times k$, and can be interpreted as 'how much data p
 It is important to note that the following conditions must be met, as described in \cite{BEZDEK1984191}:
 \begin{enumerate}
     \item $u_{ij} \in [0, 1]$
-    \item $\sum_{j=1}^{k} u_{ij} = 1$
+    \item $\sum_{j=1}^{K} u_{ij} = 1$
 \end{enumerate}
 
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \resizebox{0.9\linewidth}{!}{\input{plots/noisy_rings.pgf}}
     \label{fig:noisy_rings}
@@ -73,7 +74,7 @@ It is important to note that the following conditions must be met, as described 
 
 \section{The Fuzzy K-Rings Algorithm}
 The Fuzzy K-Rings algorithm is a clustering algorithm that is able to cluster data points in a ring-shaped dataset.
-The algorithm is inspired on the K-Means algorithm, and described in \cite{DAVE1992713} and \cite{308484}, altough in different variations.
+The algorithm is inspired by the Fuzzy C-Means, and described in \cite{DAVE1992713} and \cite{308484}, altough in different variations.
 It is described as an optimization problem, where the objective function is to minimize the following equation:
 \begin{equation}\label{eq:objective}
 J_q(U, V, R) = \sum_{i=1}^{N} \sum_{j=1}^{K} (u_{ij})^q (d_{ij} - r_i)^2
@@ -93,13 +94,13 @@ As mentioned, we can define the algoritm as an optimization problem after fixing
 by setting the partial derivatives with respect to $r_i$ and $V_i$ to zero.
 First, we have:
 \begin{equation}\label{eq:d_dr}
-\frac{\partial}{\partial r_i}(J_q) = \sum_{j=1}^{n} (u_{ij})^q\frac{\partial}{\partial r_i} (d_{ij} - r_i)^2 = \sum_{j=1}^{n} (u_{ij})^q (r_i - d_{ij}) = 0
+\frac{\partial}{\partial r_i}(J_q) = \sum_{j=1}^{N} (u_{ij})^q\frac{\partial}{\partial r_i} (d_{ij} - r_i)^2 = \sum_{j=1}^{N} (u_{ij})^q (r_i - d_{ij}) = 0
 \end{equation}
 
 For the centers, we take a different approach to the one taken in \cite{308484}, and similar to the one in \cite{DAVE1992713}. It is more computation friendly, and it can be
 trivially extended to higher dimensions, unlike \cite{308484}.
 
-\begin{figure}
+\begin{figure}[t]
 \begin{center}
 \begin{tikzpicture}\label{fig:circle}
     % Define radius
@@ -167,17 +168,17 @@ Then, following \cite{308484}, we can solve:
 \end{equation}
 Plugging that into \eqref{eq:d_dV}, we get:
 \begin{equation}
-\sum_{j=1}^{n} u_{ij}^q (1 - \frac{r_i}{d_{ij}})(X_j - V_i) = 0
+\sum_{j=1}^{N} u_{ij}^q (1 - \frac{r_i}{d_{ij}})(X_j - V_i) = 0
 \end{equation}
 We now have a system of equations that we can solve for $V_i$ and $r_i$ to obtain the critical points of the objective function. It is important that since
 the equations are coupled, they must be solved together. \cite{DAVE1992713} mentions (and cites the proof) that, indeed, the critical
 points are minima. The experimental results also back this up.
 One solution, as noted in \cite{DAVE1992713}, is:
 \begin{equation}
-V_i = \frac{\sum_{j=1}^{n} u_{ij}^q X_j}{\sum_{j=1}^{n} u_{ij}^q}
+V_i = \frac{\sum_{j=1}^{N} u_{ij}^q X_j}{\sum_{j=1}^{N} u_{ij}^q}
 \end{equation}
 \begin{equation}\label{eq:r_i}
-r_i = \frac{\sum_{j=1}^{n} u_{ij}^q d_{ij}}{\sum_{j=1}^{n} u_{ij}^q}
+r_i = \frac{\sum_{j=1}^{N} u_{ij}^q d_{ij}}{\sum_{j=1}^{N} u_{ij}^q}
 \end{equation}
 On the other hand, \cite{308484} proposes a different solution, which is to solve the equations separately. In our experiments, we found that solution not to work very
 well in practice, and the one proposed by \cite{DAVE1992713} to work better.
@@ -201,7 +202,7 @@ This is done by using the membership degrees as weights, and the distances as th
     \item Concentric datasets: In this case, since all rings share the same center, but have different radii, the procedure is as follows.
     For the centers, we simply compute the baricenter of the dataset:
     \begin{equation}
-        V_i = \frac{1}{n} \sum_{j=1}^{n} X_j
+        V_i = \frac{1}{n} \sum_{j=1}^{N} X_j
     \end{equation}
     Then, for the radii we define max and min as follows:
     \begin{equation}
@@ -233,7 +234,7 @@ we break the loop. However, we do not stop it completely, but we will get to tha
 \subsection{Background noise detection}
 Recall that our objective is to explore the clustering of rings in noisy data.
 However, in the case of noisy data, the basic algorithm can be sensitive to noise. To mitigate this, we propose an aditional step.
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \resizebox{0.9\linewidth}{!}{\input{plots/noisy_bg.pgf}}
     \label{fig:noisy_bg}
@@ -252,16 +253,14 @@ It is important to note that it is only for the computation of the centers and r
 This is done with the use of a mask, where 1 means not noise, and 0 means noise, and then by multiplying the mask by the membership degrees and the distances.
 Therefore, the equations to update the centers and radii are modified as follows:
 \begin{equation}\label{eq:V_i_new}
-    V_i = \frac{\sum_{j=1}^{n} u_{ij}^q X_j \cdot mask_j}{\sum_{j=1}^{n} u_{ij}^q \cdot mask_j}
+    V_i = \frac{\sum_{j=1}^{N} u_{ij}^q X_j \cdot mask_j}{\sum_{j=1}^{N} u_{ij}^q \cdot mask_j}
 \end{equation}
 
 \begin{equation}\label{eq:r_i_new}
-    r_i = \frac{\sum_{j=1}^{n} u_{ij}^q d_{ij} \cdot mask_j}{\sum_{j=1}^{n} u_{ij}^q \cdot mask_j}
+    r_i = \frac{\sum_{j=1}^{N} u_{ij}^q d_{ij} \cdot mask_j}{\sum_{j=1}^{N} u_{ij}^q \cdot mask_j}
 \end{equation}
 This makes 'noise' points not to affect the computation of the centers and radii, and therefore, the algorithm is more robust to noise, as shown in the experiments.
 The recomputation of the membership matrix is not altered.
-
-\subsubsection{How to obtain the mask}
 The mask can be obtained by iterating over the data samples, and checking if the noise condition holds:
 \begin{equation}
     % mask is logical not of is_noise
@@ -348,18 +347,18 @@ Moreover, we generate $N$ noise points randomly accross the space.
 \subsection{Evaluation Metrics}
 We use the following metrics to evaluate the performance of the algorithm:
 \begin{itemize}
-    \item Squared distance error (with hard labels)
+    \item Absolute distance error (with hard labels)
     \begin{equation}
-        \text{SDE} = \sum_{i=1}^{n} distance(X_i, ring_i)^2
+        \text{ADE} = \sum_{i=1}^{N} distance(X_i, ring_i)
     \end{equation}
     Where $distance(X_i, ring_i)$ is the distance between the point $X_i$ and the circunference of the ring $ring_i$.
     $ring_i$ denotes the classified ring of the point $X_i$.
     Recall that we could classify some points as noise. In the case of a noise point, distance returns 0, that is,
-    we do not take noise points into account when computing the SDE.
+    we do not take noise points into account when computing the ADE.
     It is important to mention that this metric has a flaw. The algorithm could simply classify every point as noise, and the error would be minimized.
     We did not (visually) detect that behaviour in the experiments, but we still include the number of detected noise points in the results (as well as the intended noise points).
 \end{itemize}
-On the other hand, we are also interested in getting the lowest runtime possible. We measure the runtime of the algorithm, as well as the total number of iterations it takes to converge.
+On the other hand, we are also interested in getting the lowest runtime possible. We measure the runtime of the algorithm (in seconds), as well as the total number of iterations it takes to converge.
 We also track the number of detected noise points, and the number of intended (since the datasets are artificially generated) noise points.
 \subsection{Results}
 We conducted different experiments to test the performance of the algorithm.
@@ -393,7 +392,7 @@ The data was generated in the following way:
 It is noteworthy to say that the algorithm is sensible to the different hyperparametrs.
 As we can see in the results, both the runtime and performance degrades with higher noise and higher number of rings.
 % tik picture
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \resizebox{0.9\linewidth}{!}{\input{plots/data_example_exc.pgf}}
     \label{fig:excentric_rings}
@@ -453,7 +452,7 @@ For the data generation:
     \item To add the background noise, we select N points in a rect centered at $(0, 0)$ with sides of length 1200, sampled from an uniform distribution.
 \end{itemize}
 
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \resizebox{0.9\linewidth}{!}{\input{plots/data_example_conc.pgf}}
     \label{fig:concentric_rings}
@@ -545,6 +544,8 @@ to the fact that once it has an erroneous classification, it is hard to recover 
 In this paper, we have presented the Fuzzy K-Rings algorithm, in a setting where we had to classify ring-shaped datasets with noise. Based on previous literature,
 we reformulated the algorithm, and extended it with a noise removal step, to make it more robust. As our experiments tell, the algorithm is able to classify ring-shaped datasets
 on 'good' data, and is fairly good on noisy data, but is sensitive to hyperparameters and its performance degrades with higher noise levels and higher number of rings.
+Given the parallel nature of the algorithm, further research could be done to parallelize the algorithm and run it on GPUs, which could be easily done with GPU frameworks,
+such as PyTorch \cite{paszke2019pytorch}.
 
 
 \bibliographystyle{IEEEtran}
