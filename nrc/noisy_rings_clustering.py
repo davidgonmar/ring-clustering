@@ -277,7 +277,7 @@ class NoisyRingsClustering:
         )  # shape (n_rings, n_samples)
         return mask
 
-    def get_labels(self) -> np.ndarray:
+    def get_labels(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Get the hard labels of the samples
 

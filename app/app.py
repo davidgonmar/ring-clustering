@@ -11,9 +11,19 @@ from experiments.draw import plot_results
 from experiments.colors import get_vibrant_colors
 
 
-# Define the function to run when button is clicked
-def run_algorithm(params, data):
-    # Initialize the algorithm with the provided parameters
+
+def run_algorithm(params: dict, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Run the Noisy Rings Clustering algorithm with the provided parameters
+    and data.
+
+    Args:
+        params: the parameters for the algorithm
+        data: the data to cluster
+    
+    Returns:
+        the labels, the centers, and the radii of the clusters
+    """
     nrc = NoisyRingsClustering(
         n_rings=params["n_rings"],
         q=params["q"],
@@ -24,15 +34,11 @@ def run_algorithm(params, data):
         max_noise_checks=params["max_noise_checks"],
         init_method=params["init_method"],
     )
-
-    # Run the algorithm
     nrc.fit(data)
-
     return nrc.get_labels()
 
 
-# Streamlit App
-st.title("Streamlit App with 8 Parameters")
+st.title("Noisy Rings Clustering")
 
 # Input parameters
 n_rings = st.number_input("n_rings", value=3)
@@ -52,14 +58,13 @@ max_radius = st.number_input("max_radius", value=400)
 
 circle_noise = st.number_input("circle_noise", value=8)
 background_noise = st.number_input("background_noise", value=20)
-# Button to run the algorithm
-if st.button("Run Algorithm"):
-    # Run the algorithm with the provided parameters
+n_samples_per_ring = st.number_input("n_samples_per_ring", value=150)
 
-    # Generate some random data
-    # ================ HELPERS ================
+
+if st.button("Run!"):
+    # create the data
     half_rect_size = rect_size // 2
-    EXCENTRIC = np.array(
+    excentric = np.array(
         [
             [-half_rect_size, -half_rect_size],
             [-half_rect_size, half_rect_size],
@@ -67,49 +72,33 @@ if st.button("Run Algorithm"):
             [half_rect_size, half_rect_size],
         ]
     )
-    CONCENTRIC = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
-    NOISE_CONCENTRIC_DELIM = np.array(
+    concentric = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
+    noise_concentric_delim = np.array(
         [[-half_rect_size, -half_rect_size], [half_rect_size, half_rect_size]]
     )
+    center_delim = concentric if mode == "concentric" else excentric
+    
+    minmax_radius = np.array([min_radius, max_radius])
 
-    CENTER_DELIMS = CONCENTRIC if mode == "concentric" else EXCENTRIC
-
-    # ================ RINGS PARAMETERS ================
-
-    MINMAX_RADIUS = np.array([min_radius, max_radius])
-    N_RINGS = n_rings
-    CIRCLES_NOISE = circle_noise
-    N_SAMPLES_PER_RING = 150
-
-    # ================ BG NOISE PARAMETERS ================
-    N_BACKGROUND_NOISE = background_noise
-    CENTER_DELIMS_NOISE = NOISE_CONCENTRIC_DELIM
-
-    # ================ ALGORITHM PARAMETERS ================
-    # "fuzzycmeans" or "concentric"
-    INIT_METHOD = init_method
-    FUZINESS_PARAM = q
-    CONVERGENCE_EPS = convergence_eps
-    MAX_ITERS = max_iters
-    NOISE_DISTANCE_THRESHOLD = noise_distance_threshold
-    APPLY_NOISE_REMOVAL = apply_noise_removal
     data = random_circles(
-        center_delimiters=CENTER_DELIMS,
-        min_max_radius=MINMAX_RADIUS,
-        n_samples_per_circle=N_SAMPLES_PER_RING,
-        n_rings=N_RINGS,
-        noise=CIRCLES_NOISE,
+        center_delimiters=center_delim,
+        min_max_radius=minmax_radius,
+        n_samples_per_circle=n_samples_per_ring,
+        n_rings=n_rings,
+        noise=circle_noise,
     )
 
     data = np.concatenate(
         [
             data,
             random_noise(
-                center_delimiters=CENTER_DELIMS_NOISE, n_samples=N_BACKGROUND_NOISE
+                center_delimiters=noise_concentric_delim, n_samples=background_noise
             ),
         ],
         axis=0,
     )
+
+    # run the algorithm
     res = run_algorithm(
         {
             "n_rings": n_rings,
@@ -124,7 +113,7 @@ if st.button("Run Algorithm"):
         data,
     )
 
-    # Plot the results
+    # display
     fig = plot_results(
         data,
         res[0],
@@ -132,6 +121,4 @@ if st.button("Run Algorithm"):
         res[2],
         get_vibrant_colors(n_rings),
     )
-
-    # Display the plot in Streamlit
     st.pyplot(fig)

@@ -531,6 +531,7 @@ As it can be seen, the algorithm detects, on average, more points than it should
 We can see that the algorithm is able to classify ring-shaped datasets with noise, and is fairly good on noisy data, but it degrades with higher noise levels and higher number of rings.
 Even if the average results are overal good, upon visual inspection, it can be seen that it either does terribly, or does very well. We hypothesize that this is due
 to the fact that once it has an erroneous classification, it is hard to recover from it, and it 'explodes'.
+Specifically, we can see that, when clustering concentric rings with background noise, it tends to 'join' rings together and treat the noise as another ring.
 
 % figure bad_class
 \begin{figure}
