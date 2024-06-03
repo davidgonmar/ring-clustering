@@ -65,19 +65,49 @@ class ExperimentParams:
 
 
 def save_np_to_csv(data: np.ndarray, filename: str) -> None:
+    """
+    Save a numpy array to a csv file
+
+    Args:
+        data: the data to save
+        filename: the filename to save to
+    """
     np.savetxt(filename, data, delimiter=",")
 
 
 def load_np_from_csv(filename: str) -> np.ndarray:
+    """
+    Load a numpy array from a csv file
+
+    Args:
+        filename: the filename to load from
+    Returns:
+        data: the loaded data
+    """
     return np.loadtxt(filename, delimiter=",")
 
 
 def save_experiment_params(params: dict, filename: str) -> None:
+    """
+    Save the experiment parameters to a json file
+
+    Args:
+        params: the parameters to save
+        filename: the filename to save to
+    """
     with open(filename, "w") as f:
         json.dump(params, f)
 
 
 def load_experiment_params(filename: str) -> dict:
+    """
+    Load the experiment parameters from a json file
+
+    Args:
+        filename: the filename to load from
+    Returns:
+        params: the loaded parameters
+    """
     with open(filename, "r") as f:
         return json.load(f)
 
@@ -89,6 +119,16 @@ def save_experiment(
     subfolder: str,
     extra_params: dict,
 ) -> None:
+    """
+    Save an experiment to disk, given a model, data, and extra params, to a given name and subfolder
+
+    Args:
+        model: the model to save
+        data: the data to save
+        name: the name of the experiment
+        subfolder: the subfolder to save the experiment to
+        extra_params: the extra parameters to save (n_background_noise, circles_noise, n_samples_per_ring)
+    """
     params = ExperimentParams(
         data_filename=f"{DATA_PATH}/{subfolder}/{name}.csv",
         n_rings=model.n_rings,
@@ -112,6 +152,17 @@ def save_experiment(
 def load_experiment(
     name: str, subfolder: str
 ) -> (NoisyRingsClustering, np.ndarray, ExperimentParams):
+    """
+    Load an experiment from disk, given a name and subfolder
+    
+    Args:
+        name: the name of the experiment
+        subfolder: the subfolder to load the experiment from
+    Returns:
+        model: the loaded model
+        data: the loaded data
+        config: the loaded configuration
+    """
     params = load_experiment_params(f"{EXPERIMENTS_PATH}/{subfolder}/{name}.json")
     data = load_np_from_csv(params["data_filename"])
     model = NoisyRingsClustering(

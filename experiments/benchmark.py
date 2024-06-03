@@ -6,7 +6,7 @@ import logging
 from collections import defaultdict
 from tabulate import tabulate
 
-np.random.seed(42)
+
 # disable logging
 logging.disable(logging.CRITICAL)
 
@@ -127,7 +127,6 @@ def benchmark(func, *args, **kwargs):
 
 def geterror(radii, centers, labels, data):
     # error is defined as the sum of the distances between the centers and the radii for each ring
-
     error = 0
     total_points = 0
 
@@ -148,10 +147,7 @@ def test_experiment(expname: str, subdolder: str):
     model, data, cfg = load_experiment(expname, subdolder)
 
     _, time = benchmark(lambda: model.fit(data))
-
-    # Get the clustering results
     radii, centers, labels = model.get_labels()
-    n_rings = model.n_rings
     error = geterror(radii, centers, labels, data)
 
     return ExperimentResults(
@@ -200,7 +196,7 @@ def main(args):
             )
         )
 
-    # Compute averages and prepare data for tabulation
+    # present the results
     final_data = []
 
     for key, values in grouped_data.items():
@@ -241,7 +237,7 @@ def main(args):
         "q": "q",
     }
 
-    # filter
+    # filter to only show the columns we want
     final_data_cmd = [[d[h] for h in conf["cmd"]] for d in final_data]
     final_data_latex = [[d[h] for h in conf["latex"]] for d in final_data]
     headers_cmd = [headers[h] for h in conf["cmd"]]
@@ -252,7 +248,8 @@ def main(args):
     )
 
     print(cmd_table)
-
+    
+    # save the results to a file, to be used in the report
     with open("results.txt", "w") as f:
         f.write(latex_table)
 

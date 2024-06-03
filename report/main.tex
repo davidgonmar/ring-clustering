@@ -406,24 +406,24 @@ As we can see in the results, both the runtime and performance degrades with hig
     \hline
        Number of rings &   Ring noise &   Background noise &   Avg. Error &   Avg. Runtime &   Iterations &   Experiments &   Avg. Detected Noise \\
     \hline
-                     1 &            0 &                  0 &      1.83853 &    0.000812167 &         2    &             3 &               0       \\
-                     1 &           20 &                  0 &     16.2363  &    0.000727667 &         2    &             3 &               0       \\
-                     1 &           20 &                 20 &     16.1469  &    0.00178713  &         6    &             3 &              18       \\
-                     2 &            0 &                  0 &      1.6219  &    0.499586    &      2505.25 &             4 &               0       \\
-                     2 &           10 &                  0 &     13.9375  &    0.0042801   &        14    &             3 &               0       \\
-                     2 &           20 &                  0 &     16.0684  &    0.692698    &      3359    &             3 &               0       \\
-                     2 &           10 &                 10 &     13.4885  &    0.731724    &      3346.33 &             3 &               3.33333 \\
-                     3 &            0 &                  0 &     74.1423  &    2.47752     &      8005    &             5 &              15.4     \\
-                     3 &           10 &                  0 &     10.2179  &    1.57101     &      5011.5  &             4 &               0       \\
-                     3 &           10 &                 15 &     21.5381  &    2.1628      &      6671.33 &             3 &               3.33333 \\
-                     4 &            0 &                  0 &     28.8584  &    2.72986     &      6010.8  &             5 &               0       \\
-                     4 &           10 &                  0 &     15.5972  &    2.31535     &      5007.75 &             4 &               6.5     \\
-                     4 &           10 &                 10 &     24.6138  &    1.61891     &      3397    &             3 &              64       \\
-                     5 &            0 &                  0 &     13.6484  &    4.82393     &      7523    &             4 &               7       \\
-                     5 &           10 &                  0 &     11.4402  &    6.47775     &     10000    &             2 &               0       \\
-                     5 &           10 &                 10 &     30.3023  &    6.46981     &     10000    &             3 &              34       \\
+                     1 &            0 &                  0 &      1.83853 &    0.0007633   &       2      &             3 &               0       \\
+                     1 &           20 &                  0 &     16.2363  &    0.000687367 &       2      &             3 &               0       \\
+                     1 &           20 &                 20 &     16.1469  &    0.00156157  &       6      &             3 &              18       \\
+                     2 &            0 &                  0 &      1.62186 &    0.456976    &    2505.25   &             4 &               0       \\
+                     2 &           10 &                  0 &     14.0226  &    0.00330033  &      10.6667 &             3 &               0       \\
+                     2 &           20 &                  0 &     16.0351  &    0.631052    &    3344      &             3 &               0       \\
+                     2 &           10 &                 10 &     13.5069  &    0.634505    &    3341.33   &             3 &               3.33333 \\
+                     3 &            0 &                  0 &     67.6204  &    2.95479     &   10000      &             5 &               8       \\
+                     3 &           10 &                  0 &     14.4416  &    0.763798    &    2525.25   &             4 &              10.75    \\
+                     3 &           10 &                 15 &     17.266   &    2.04509     &    6670.67   &             3 &               3.33333 \\
+                     4 &            0 &                  0 &     26.2515  &    3.58296     &    8003.8    &             5 &               0       \\
+                     4 &           10 &                  0 &     15.6864  &    1.15821     &    2520.5    &             4 &               5.5     \\
+                     4 &           10 &                 10 &     22.5589  &    4.47653     &   10000      &             3 &              30.6667  \\
+                     5 &            0 &                  0 &     20.2154  &    6.43739     &   10000      &             4 &               0       \\
+                     5 &           10 &                  0 &     14.6675  &    6.43317     &   10000      &             2 &               0       \\
+                     5 &           10 &                 10 &     33.6885  &    6.58792     &   10000      &             3 &               0       \\
     \hline
-    \end{tabular}
+\end{tabular}
 \caption{Results of the general test with excentric rings. 'Experiments' denote the total number of experiments conducted with the same parameters.}
 \end{figure*}
 
@@ -466,16 +466,16 @@ For the data generation:
     \hline
        Number of rings &   Ring noise &   Background noise &   Avg. Error &   Avg. Runtime &   Iterations &   Experiments &   Avg. Detected Noise \\
     \hline
-                     2 &            0 &                  0 &      2.46091 &     0.00138317 &      4       &             3 &                0      \\
-                     2 &           10 &                  0 &      8.34515 &     0.00144163 &      4.33333 &             3 &                0      \\
-                     2 &           10 &                 20 &     27.6871  &     0.739527   &   3339.67    &             3 &               39.3333 \\
-                     3 &            0 &                  0 &      2.77079 &     0.00386943 &      8       &             3 &                0      \\
-                     3 &           10 &                  0 &      8.26071 &     0.00237887 &      5       &             3 &                0      \\
-                     3 &           10 &                 10 &     31.2555  &     1.63057    &   5004.5     &             2 &               33.5    \\
-                     4 &            0 &                  0 &      7.70461 &     0.0523678  &    102       &             3 &                0      \\
-                     4 &           10 &                 10 &    308.983   &     4.96551    &  10000       &             4 &                0      \\
+                     2 &            0 &                  0 &      2.46091 &     0.00128263 &      3.66667 &             3 &                0      \\
+                     2 &           10 &                  0 &      8.34515 &     0.0012588  &      4       &             3 &                0      \\
+                     2 &           10 &                 20 &     37.2104  &     0.652302   &   3338.67    &             3 &               53.3333 \\
+                     3 &            0 &                  0 &      8.14361 &     0.998159   &   3336.33    &             3 &                0      \\
+                     3 &           10 &                  0 &      8.26072 &     0.00172157 &      4.33333 &             3 &                0      \\
+                     3 &           10 &                 10 &     12.296   &     0.029796   &     95.5     &             2 &                5.5    \\
+                     4 &            0 &                  0 &      7.53772 &     0.0039321  &      7.66667 &             3 &                0      \\
+                     4 &           10 &                 10 &    236.073   &     4.72157    &  10000       &             4 &                0      \\
     \hline
-\end{tabular}
+    \end{tabular}
 \caption{Results of the general test with concentric rings.}
 \end{figure*}
 \begin{figure*}[!ht]
@@ -484,10 +484,10 @@ For the data generation:
         \hline
            Avg. Error &   Avg. Runtime &   Iterations &   Experiments &   Avg. Detected Noise &   Background noise \\
         \hline
-              4.24471 &     0.00268757 &       7.25   &             4 &                    86 &                100 \\
-             19.0933  &     0.0050642  &      10.3333 &             3 &                   160 &                200 \\
+              4.24471 &     0.00246235 &       7.25   &             4 &                    86 &                100 \\
+             19.0933  &     0.0033355  &      10.3333 &             3 &                   160 &                200 \\
         \hline
-        \end{tabular}
+    \end{tabular}
     \caption{Results of the needle in the haystack test.}
 \end{figure*}
 
@@ -518,21 +518,28 @@ As it can be seen, the algorithm detects, on average, more points than it should
 \begin{figure*}[!ht]
     \centering
     \begin{tabular}{rrrrrrrr}
-    \hline
+        \hline
            Number of rings &   Ring noise &   Background noise &   Avg. Error &   Avg. Runtime &   Iterations &   Experiments &   Avg. Detected Noise \\
-    \hline
-                         3 &            8 &                200 &      41.4563 &        4.06347 &       7541.3 &            20 &                 242.8 \\
-                         3 &            8 &                200 &      67.6438 &        2.36278 &       4035.1 &            20 &                   0   \\
-    \hline
+        \hline
+                         3 &            8 &                200 &      38.912  &        3.83468 &      6560.3  &            20 &                248.15 \\
+                         3 &            8 &                200 &      68.1204 &        2.5356  &      4048.95 &            20 &                  0    \\
+        \hline
     \end{tabular}
-    \caption{Results of the noise detection test.}
+    \caption{Results of the background noise detection test.}
 \end{figure*}
 
 \subsubsection{Experiments conclusions}
-In the general tests, we found that the algorithm is able to classify ring-shaped datasets with noise, but it does worse as the noise level and the number of rings increase.
-Moreover, altough the metrics seem correct, it is imporant to mention that it's difficult to quantify the performance of the algorithm with metrics. Sometimes the metric might
-be good, but upon visual inspection, the classification is not good. This is especially true when the noise level is high.
+We can see that the algorithm is able to classify ring-shaped datasets with noise, and is fairly good on noisy data, but it degrades with higher noise levels and higher number of rings.
+Even if the average results are overal good, upon visual inspection, it can be seen that it either does terribly, or does very well. We hypothesize that this is due
+to the fact that once it has an erroneous classification, it is hard to recover from it, and it 'explodes'.
 
+% figure bad_class
+\begin{figure}
+    \centering
+    \resizebox{0.65\linewidth}{!}{\input{plots/bad_class.pgf}}
+    \label{fig:bad_class}
+    \caption{Example of the algorithm 'exploding' in a bad classification. Instead of having errors in the classification, it just does something completely wrong.}
+\end{figure}
 
 \section{Conclusion}
 In this paper, we have presented the Fuzzy K-Rings algorithm, in a setting where we had to classify ring-shaped datasets with noise. Based on previous literature,
@@ -543,6 +550,4 @@ on 'good' data, and is fairly good on noisy data, but is sensitive to hyperparam
 \bibliographystyle{IEEEtran}
 \bibliography{references.bib}
 
-\vspace{12pt}
-\color{red}
 \end{document}

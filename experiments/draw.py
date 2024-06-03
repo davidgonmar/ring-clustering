@@ -20,7 +20,8 @@ def plot_results(
         centers: (n_rings, 2) ndarray, the centers of the rings
         labels: (n_samples) ndarray, the labels of the samples
         cluster_base_colors: (n_rings, 3) ndarray, the base colors of the clusters
-        show_noise: bool, whether to show noise points (default: False)
+    Returns:
+        fig: the matplotlib figure
     """
     assert (
         len(radii) == len(centers) == len(cluster_base_colors)
@@ -28,7 +29,7 @@ def plot_results(
         len(radii), len(centers), len(cluster_base_colors)
     )
     purple = np.array([0.5, 0, 0.5])
-    # Assign a color to each point
+    # one color per point
     colors = np.array(
         [
             cluster_base_colors[labels[i]] if labels[i] != NOISE else purple
@@ -36,13 +37,11 @@ def plot_results(
         ]
     )
 
-    # Create a plot
     fig, ax = plt.subplots()
 
-    # Plot the data
     ax.scatter(data[:, 0], data[:, 1], c=colors, s=10)
 
-    # Draw circles with radii
+    # draw the circles and radii / centers
     for i in range(len(radii)):
         circle = plt.Circle(
             centers[i], radii[i], fill=False, edgecolor=cluster_base_colors[i]
@@ -51,7 +50,6 @@ def plot_results(
         # Draw the center of the circle
         ax.scatter(centers[i][0], centers[i][1], c="black", s=10)
 
-    # Set the aspect of the plot to be equal
     ax.set_aspect("equal")
 
     return fig

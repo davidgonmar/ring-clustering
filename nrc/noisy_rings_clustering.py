@@ -184,7 +184,7 @@ class NoisyRingsClustering:
             )  # normalize the memberships
             self.noise_mask = np.ones_like(self.memberships, dtype=np.int32)
         elif self.init_method == "fuzzycmeans":
-            kmeans = FuzzyCMeans(n_clusters=self.n_rings, max_iter=300, m=1.2, eps=0.01)
+            kmeans = FuzzyCMeans(n_clusters=self.n_rings, max_iter=3000, m=1.1)
             kmeans.fit(x)
 
             self.centers = kmeans.centroids  # shape (n_rings, n_features)
