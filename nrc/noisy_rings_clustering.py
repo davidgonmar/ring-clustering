@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 NOISE = -1
 
+
 class NoisyRingsClustering:
     def __init__(
         self,
@@ -99,14 +100,13 @@ class NoisyRingsClustering:
         """
 
         ring_dists = (
-            self._dist_to_rings(samples, self.centers, self.radii) ** (2 / (self.q - 1)) + self.eps
+            self._dist_to_rings(samples, self.centers, self.radii) ** (2 / (self.q - 1))
+            + self.eps
         )  # shape (n_rings, n_samples)
-        #shapes (1, n_rings, n_samples) / (n_rings, 1, n_samples) -> (n_rings, n_rings, n_samples)
-        term = (ring_dists[None, :, :] / ring_dists[:, None, :]) 
+        # shapes (1, n_rings, n_samples) / (n_rings, 1, n_samples) -> (n_rings, n_rings, n_samples)
+        term = ring_dists[None, :, :] / ring_dists[:, None, :]
         mem = 1 / np.sum(term, axis=0)
         return mem
-    
-
 
     def _get_new_radii(self, samples: np.ndarray) -> np.ndarray:
         """
