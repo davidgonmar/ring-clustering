@@ -11,8 +11,9 @@ from experiments.draw import plot_results
 from experiments.colors import get_vibrant_colors
 
 
-
-def run_algorithm(params: dict, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def run_algorithm(
+    params: dict, data: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Run the Noisy Rings Clustering algorithm with the provided parameters
     and data.
@@ -20,7 +21,7 @@ def run_algorithm(params: dict, data: np.ndarray) -> tuple[np.ndarray, np.ndarra
     Args:
         params: the parameters for the algorithm
         data: the data to cluster
-    
+
     Returns:
         the labels, the centers, and the radii of the clusters
     """
@@ -77,7 +78,7 @@ if st.button("Run!"):
         [[-half_rect_size, -half_rect_size], [half_rect_size, half_rect_size]]
     )
     center_delim = concentric if mode == "concentric" else excentric
-    
+
     minmax_radius = np.array([min_radius, max_radius])
 
     data = random_circles(

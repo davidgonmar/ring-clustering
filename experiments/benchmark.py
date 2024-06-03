@@ -248,7 +248,7 @@ def main(args):
     )
 
     print(cmd_table)
-    
+
     # save the results to a file, to be used in the report
     with open("results.txt", "w") as f:
         f.write(latex_table)

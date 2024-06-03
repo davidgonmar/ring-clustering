@@ -154,7 +154,7 @@ def load_experiment(
 ) -> (NoisyRingsClustering, np.ndarray, ExperimentParams):
     """
     Load an experiment from disk, given a name and subfolder
-    
+
     Args:
         name: the name of the experiment
         subfolder: the subfolder to load the experiment from

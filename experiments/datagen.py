@@ -3,7 +3,7 @@ import numpy as np
 
 def noisy_circle(
     base_position: np.ndarray, radius: float, n_samples: int, noise: float = 0.1
-):  
+):
     """
     Generate points on a circle with noise
 
@@ -21,8 +21,12 @@ def noisy_circle(
 
 
 def random_circles(
-    center_delimiters: np.ndarray, min_max_radius: np.ndarray, n_samples_per_circle: int, n_rings: int, noise=0.3
-):  
+    center_delimiters: np.ndarray,
+    min_max_radius: np.ndarray,
+    n_samples_per_circle: int,
+    n_rings: int,
+    noise=0.3,
+):
     """
     Generate random circles within a rectangle
 
