@@ -29,35 +29,34 @@ davgonmar2@alum.us.es}
 \maketitle
 
 \begin{abstract}
-In this paper, we apply the Fuzzy K-Rings algorithm, also known as the Fuzzy C-Shells algorithm to ring clustering in noisy data.
+In this paper, we apply the Fuzzy K-Rings algorithm, also known as the Fuzzy C-Shells algorithm, to ring clustering in noisy data.
 We further propose a modification to the algorithm to make it more robust to noise, and conduct different experiments to test the performance of the algorithm.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Fuzzy K-Rings, Fuzzy C-Shells, Clustering, Noisy Data, Ring Clustering, Hypersphere Clustering
+Fuzzy K-Rings, Fuzzy C-Shells, Clustering, Noisy Data, Ring Clustering, Hypersphere Clustering, Noisy Rings Clustering
 \end{IEEEkeywords}
 
 \section{Introduction}
-We are presented with the following problem: we have a dataset that is composed different rings and noise. Our objective is to classify the points in different clusters,
-each corresponding to a different ring. Fuzzy clustering algorithms, instead of assigning a single cluster to each data point, assign a membership degree to each data point for each cluster. There has been a good
-amount of work in the past on fuzzy algorithms applied to different type of datasets. The Fuzzy K-Rings algorithm, also known as the Fuzzy C-Shells algorithm, is a clustering algorithm that has been used in the past
-for similar tasks. The algorithm is inspired on the Fuzzy C-Means algorithm, and was introduced, altough in different variations, in \cite{308484} and \cite{DAVE1992713}. In this paper,
+We are presented with the following problem: we have a dataset that is composed of different rings and noise. Our objective is to classify the points into different clusters,
+each corresponding to a different ring. Fuzzy clustering algorithms, instead of assigning a single cluster to each data point, assign a membership degree to each data point for each cluster. There has been a significant
+amount of work in the past on fuzzy algorithms applied to different types of datasets. The Fuzzy K-Rings algorithm, also known as the Fuzzy C-Shells algorithm, is a clustering algorithm that has been used in the past
+for similar tasks. The algorithm is inspired by the Fuzzy C-Means algorithm, and was introduced, although in different variations, in \cite{308484} and \cite{DAVE1992713}. In this paper,
 we will focus on applying the Fuzzy K-Rings algorithm to the problem of clustering rings in noisy dataset. By noise we mean inconsistency in the rings, or background noise that does not belong to any ring.
-We will further propose a modification to the algorithm to make it more robust to noise, and conduct different experiments to test the performance of the algorithm under different circumstances.
+We will further propose a modification to the algorithm to make it more robust to noise, and conduct various experiments to test the performance of the algorithm under different circumstances.
 
 \section{Fuzzy Clustering Algorithms}
 In hard clustering algorithms, each data point is assigned to a single cluster. In contrast, fuzzy algorithms assign a membership degree to each data point for each cluster.
-One of the most popular ones is the Fuzzy C-Means algorithm. A formal description of it can be found in \cite{bookpatternrecognition} and \cite{BEZDEK1984191}. It can be seen as an optimization problem,
+One of the most popular ones is the Fuzzy C-Means algorithm. A formal description of it can be found in \cite{bookpatternrecognition} and \cite{BEZDEK1984191}. The algorithm can be seen as an optimization problem,
 where the objective function is to minimize the following equation:
 \begin{equation}
-J(U, V) = \sum_{i=1}^{N} \sum_{j=1}^{K} (u_{ij})^q d_{ij}^2
+J(U, V) = \sum_{i=1}^{N} \sum_{j=1}^{K} (u_{ij})^q (d_{ij})^2
 \end{equation}
 where $K$ is the number of clusters, $N$ is the number of data samples, $u_{ij}$ is the membership degree of cluster $i$ to data sample $j$,
-$d_{ij}$ is the eucledian distance between data point $i$ and the center of cluster $j$, and $q$ is a parameter in $[1, \infty)$ that controls the fuzziness of the membership degrees.
-The higher the value of $q$, the more 'fuzzy' the algorithm will be. When $q$ is 1, the algorithm will be equivalent to K-Means, that is, it will be a hard clustering algorithm.
+$d_{ij}$ is the euclidean distance between data point $i$ and the center of cluster $j$, and $q$ is a parameter in $[1, \infty)$ that controls the fuzziness of the membership degrees.
+The higher the value of $q$, the 'fuzzier' the algorithm will be. When $q$ is 1, the algorithm will be equivalent to K-Means, that is, it will be a hard clustering algorithm.
 So, if we focus strictly on fuzzy algorithms, then $q$ is in $(1, \infty)$, and if we include hard clustering algorithms, then $q$ is in $[1, \infty)$.
-That is, higher values of $q$ will make the membership degrees more 'fuzzy', and lower values will make them harder, that is, closer to regular K-Means.
-$u$ is a matrix of size $n \times k$, and can be interpreted as 'how much data point $i$ belongs to cluster $j$'.
+$U$ is a matrix of size $n \times k$, and can be interpreted as 'how much data point $i$ belongs to cluster $j$'.
 It is important to note that the following conditions must be met, as described in \cite{BEZDEK1984191}:
 \begin{enumerate}
     \item $u_{ij} \in [0, 1]$
@@ -79,19 +78,18 @@ It is described as an optimization problem, where the objective function is to m
 \begin{equation}\label{eq:objective}
 J_q(U, V, R) = \sum_{i=1}^{N} \sum_{j=1}^{K} (u_{ij})^q (d_{ij} - r_i)^2
 \end{equation}
-where $K$ is the number of rings, $N$ is the number of data samples, $u_{ij}$ is the membership degree of cluster $i$ to data sample $j$, $d_{ij}$ is the eucledian distance between data point $i$ and the center of cluster $j$, $r_i$ is the radius of the cluster $i$, and $q$ is a parameter that controls the fuzziness of the membership degrees.
-That is, higher values of $q$ will make the membership degrees more fuzzy, and lower values will make them harder.
+where $K$ is the number of rings, $N$ is the number of data samples, $u_{ij}$ is the membership degree of cluster $i$ to data sample $j$, $d_{ij}$ is the euclidean distance between data point $i$ and the center of cluster $j$, $r_i$ is the radius of the cluster $i$, and $q$ is a parameter that controls the fuzziness of the membership degrees.
 From now on, we'll refer to $$|d_{ij} - r_i|$$ as $d'_{ij}$.
 Now, we'll describe the ways to update the different parameters in the algorithm, and then we'll describe the initialization and convergence criteria, as well as the concrete steps.
 
 \subsection{Updating the Membership Degrees}
 The membership degrees are updated using the following equation, as described in both \cite{DAVE1992713} and \cite{308484}. It's the same as the one used in the Fuzzy C-Means algorithm, but with $d_{ij}$ replaced by $d'_{ij}$.
 \begin{equation}
-u_{ij} = \frac{d'^2(X_j, V_i)^{\frac{-1}{q-1}}}{\sum_{k=1}^{K} d'^2(X_j, V_k)^{\frac{-1}{q-1}}}
+u_{ij} = \frac{1}{\sum_{k=1}^{K} \left(\frac{d'_{ij}}{d'_{ik}}\right)^{\frac{2}{q-1}}}
 \end{equation}
 
 \subsection{Updating the Cluster Radii and Centers}
-As mentioned, we can define the algorith as an optimization problem after fixing $U$. We can then obtain the optimal (minimum) values for the objective function
+As mentioned, we can define the algoritm as an optimization problem after fixing $U$. We can then obtain the optimal (minimum) values for the objective function
 by setting the partial derivatives with respect to $r_i$ and $V_i$ to zero.
 First, we have:
 \begin{equation}\label{eq:d_dr}
@@ -144,7 +142,7 @@ trivially extended to higher dimensions, unlike \cite{308484}.
 \end{figure}
 
 
-Let $X_j$ be a data point, and $V_i$ be the center of cluster $i$. Let $d_{ij}$ be the eucledian distance between $X_j$ and $V_i$,
+Let $X_j$ be a data point, and $V_i$ be the center of cluster $i$. Let $d_{ij}$ be the euclidean distance between $X_j$ and $V_i$,
 and $r_i$ be the radius of cluster $i$.
 Let $d'_{ij}$ be the distance between $X_j$ and the circle with center $V_i$ and radius $r_i$.
 
@@ -155,7 +153,7 @@ V'_i = \frac{r_i}{d_{ij}}X_j + (1 - \frac{r_i}{d_{ij}})V_i
 
 Differentiating \eqref{eq:objective} with respect to $V_i$ and setting it to zero, we get:
 \begin{equation}\label{eq:d_dV}
-\frac{\partial}{\partial V_i}(J_q) = \sum_{j=1}^{n} u_{ij}^q\frac{\partial}{\partial V_i} (d'_{ij})^2 = 0
+\frac{\partial}{\partial V_i}(J_q) = \sum_{j=1}^{N} u_{ij}^q\frac{\partial}{\partial V_i} (d'_{ij})^2 = 0
 \end{equation}
 Note that we can rewrite $(d'_{ij})^2$ as $(X_j - V'_i)^T(X_j - V'_i)$.
 Then, following \cite{308484}, we can solve:
@@ -164,12 +162,12 @@ Then, following \cite{308484}, we can solve:
 \frac{\partial}{\partial V_i} (d_{ij} - r_i)^2 &= \left(\frac{\partial}{\partial V_i} (|X_j - V_i| - r_i)^2\right) \\
 &= -2 \left( (X_j - V_i) - \frac{r_i}{|X_j - V_i|} (X_j - V_i) \right) \\
 &= -2 \left( (X_j - V_i) - \frac{r_i}{d_{ij}} (X_j - V_i) \right) \\
-&= -2 \left( (1 - \frac{r_i}{d_{ij}})X_J - (1 - \frac{r_i}{d_{ij}})V_i \right)
+&= -2 \left( (1 - \frac{r_i}{d_{ij}})X_j - (1 - \frac{r_i}{d_{ij}})V_i \right)
 \end{aligned}
 \end{equation}
 Plugging that into \eqref{eq:d_dV}, we get:
 \begin{equation}
-\sum_{j=1}^{n} u_{ij}^q (d_{ij} - r_i) (X_j - V_i) = 0
+\sum_{j=1}^{n} u_{ij}^q (1 - \frac{r_i}{d_{ij}})(X_j - V_i) = 0
 \end{equation}
 We now have a system of equations that we can solve for $V_i$ and $r_i$ to obtain the critical points of the objective function. It is important that since
 the equations are coupled, they must be solved together. \cite{DAVE1992713} mentions (and cites the proof) that, indeed, the critical
@@ -181,10 +179,8 @@ V_i = \frac{\sum_{j=1}^{n} u_{ij}^q X_j}{\sum_{j=1}^{n} u_{ij}^q}
 \begin{equation}\label{eq:r_i}
 r_i = \frac{\sum_{j=1}^{n} u_{ij}^q d_{ij}}{\sum_{j=1}^{n} u_{ij}^q}
 \end{equation}
-On the other hand, \cite{308484} proposes a different solution, which is to solve the equations separately. In my experiments, I found that solution not to work very
+On the other hand, \cite{308484} proposes a different solution, which is to solve the equations separately. In our experiments, we found that solution not to work very
 well in practice, and the one proposed by \cite{DAVE1992713} to work better.
-It is also easily checkable that the solution proposed by \cite{DAVE1992713} is a critical point by substituting it into the equations.
-
 
 \subsection{Intuition}
 After having given a formal description of the basic algorithm, we can give an intuitive explanation of it.
@@ -243,7 +239,7 @@ However, in the case of noisy data, the basic algorithm can be sensitive to nois
     \label{fig:noisy_bg}
     \caption{Example of a dataset with different rings and background noise, and their correct classification (purple means noise).}
 \end{figure}
-The algorithm takes an additional noise threshold as hyperparameter, which is the maximum distance a point can have to all cluster center to be considered noise.
+The algorithm takes an additional noise threshold as hyperparameter, which is the maximum distance a point can have to all cluster centers to be considered noise.
 We can express the equation as:
 \begin{equation}
     \text{is\_noise}(X_j) = \begin{cases}
@@ -253,7 +249,7 @@ We can express the equation as:
 \end{equation}
 When computing the centers and radii, points that are considered noise are ignored, that is, all their weights are set to zero.
 It is important to note that it is only for the computation of the centers and radii. The stored membership degrees are not modified.
-This is done with the use of a mask, where 1 means not noise, and 0 means noise, and then multiplying the mask by the membership degrees and the distances.
+This is done with the use of a mask, where 1 means not noise, and 0 means noise, and then by multiplying the mask by the membership degrees and the distances.
 Therefore, the equations to update the centers and radii are modified as follows:
 \begin{equation}\label{eq:V_i_new}
     V_i = \frac{\sum_{j=1}^{n} u_{ij}^q X_j \cdot mask_j}{\sum_{j=1}^{n} u_{ij}^q \cdot mask_j}
@@ -262,7 +258,7 @@ Therefore, the equations to update the centers and radii are modified as follows
 \begin{equation}\label{eq:r_i_new}
     r_i = \frac{\sum_{j=1}^{n} u_{ij}^q d_{ij} \cdot mask_j}{\sum_{j=1}^{n} u_{ij}^q \cdot mask_j}
 \end{equation}
-This makes 'noise' points not to affect the computation of the centers and radii, and therefore, the algorithm is more robust to noise.
+This makes 'noise' points not to affect the computation of the centers and radii, and therefore, the algorithm is more robust to noise, as shown in the experiments.
 The recomputation of the membership matrix is not altered.
 
 \subsubsection{How to obtain the mask}
@@ -326,9 +322,9 @@ We chose the first option, that is, assigning each point to the cluster with the
 As for the radius and the center, obtaining them is a direct result of the algorithm.
 
 \subsection{Memory Complexity}
-First, it is important to note that the actual complexity depends on the implementation. For example, by using python tensor frameworks,
+First, it is important to note that the actual memory complexity and the time complexity, depends on the implementation. For example, by using Python tensor frameworks,
 such as NumPy \cite{harris2020array} or PyTorch \cite{paszke2019pytorch}, we can play with dimension broadcasting and vectorization to make the algorithm faster.
-Therefore, we only focus on memory complexity, since that is more general.
+Therefore, we only focus on memory complexity, and we give a rough estimate..
 First, to store the temporary variables, the memory complexity is the following (k denotes clusters, n number of samples, and d the dimensionality of the data (usually 2)):
 \begin{enumerate}
     \item U: $O(k \cdot n)$
@@ -345,8 +341,9 @@ In the past implementation, we tried using 64-bit floats, but the algorithm was 
 
 \section{Experiments}
 We conducted different experiments to test the performance of the algorithm. Given a dataset, that is, a set of points, we could define, informally,
-two types of points, those that belong to a ring, and those that don't belong to any. We call the second one 'background noise' or 'noise' from now on.
-In order to generate the dataset, we generate N rings with n noise. The noise of the rings can be seen as 'imperfection' that would occur in a real dataset.
+two types of points, those that belong to a ring, and those that don't belong to any. We call the second one 'background noise' from now on.
+In order to generate the dataset, we generate N rings with n noise. The noise of the rings can be seen as 'imperfection' that would occur in a real dataset,
+for example, because of human error or measurement error.
 Moreover, we generate $N$ noise points randomly accross the space.
 \subsection{Evaluation Metrics}
 We use the following metrics to evaluate the performance of the algorithm:
@@ -363,7 +360,7 @@ We use the following metrics to evaluate the performance of the algorithm:
     We did not (visually) detect that behaviour in the experiments, but we still include the number of detected noise points in the results (as well as the intended noise points).
 \end{itemize}
 On the other hand, we are also interested in getting the lowest runtime possible. We measure the runtime of the algorithm, as well as the total number of iterations it takes to converge.
-
+We also track the number of detected noise points, and the number of intended (since the datasets are artificially generated) noise points.
 \subsection{Results}
 We conducted different experiments to test the performance of the algorithm.
 \subsubsection{General test with excentric rings}
@@ -385,11 +382,11 @@ The data was generated in the following way:
 \begin{itemize}
     \item For each ring, we randomly select a center in a rect centered at $(0, 0)$ with sides of length 1200.
     \item Each circle had a radius between 100 and 400.
-    \item For each ring, we randomly select 100 samples in the circunference. For each sample, we add a noise with the following equation:
+    \item For each ring, we randomly select 100 samples in the circunference. For each sample, we add noise with the following equation:
     \begin{equation}
         X_{\text{noise}} = X_{\text{ring}} + \text{randn}(0, 1) \cdot \text{noise\_level}
     \end{equation}
-    Where $X_{\text{ring}}$ is the point in the circunference, and $\text{noise\_level}$ is the noise level, and $\text{randn}(0, 1)$ is a random number from a normal distribution with mean 0 and variance 1.
+    Where $X_{\text{ring}}$ is the set of points in the circunference, and $\text{noise\_level}$ is the noise level, and $\text{randn}(0, 1)$ is a random vector from a normal distribution with mean 0 and variance 1.
     \item To add the background noise, we select N points in the rect, sampled from an uniform distribution.
 \end{itemize}
 
@@ -448,11 +445,11 @@ The hyperparameters were set as follows:
 For the data generation:
 \begin{itemize}
     \item For each ring, we randomly select a radius between 50 and 1000.
-    \item For each ring, we randomly select 100 samples in the circunference. For each sample, we add a noise with the following equation:
+    \item For each ring, we randomly select 100 samples in the circunference. For each sample, we add noise with the following equation:
     \begin{equation}
         X_{\text{noise}} = X_{\text{ring}} + \text{randn}(0, 1) \cdot \text{noise\_level}
     \end{equation}
-    Where $X_{\text{ring}}$ is the point in the circunference, and $\text{noise\_level}$ is the noise level, and $\text{randn}(0, 1)$ is a random number from a normal distribution with mean 0 and variance 1.
+    Where $X_{\text{ring}}$ is the set of points in the circunference, and $\text{noise\_level}$ is the noise level, and $\text{randn}(0, 1)$ is a random vector sampled from a normal distribution with mean 0 and variance 1.
     \item To add the background noise, we select N points in a rect centered at $(0, 0)$ with sides of length 1200, sampled from an uniform distribution.
 \end{itemize}
 

@@ -6,6 +6,7 @@ import logging
 from collections import defaultdict
 from tabulate import tabulate
 
+np.random.seed(42)
 # disable logging
 logging.disable(logging.CRITICAL)
 

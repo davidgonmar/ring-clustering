@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 NOISE = -1
 
-
 class NoisyRingsClustering:
     def __init__(
         self,
@@ -49,7 +48,7 @@ class NoisyRingsClustering:
         self.apply_noise_removal = apply_noise_removal
         self.init_method = init_method
 
-    def _eucledian_dist(
+    def _euclidean_dist(
         self, x: np.ndarray, y: np.ndarray, axis: int = -1
     ) -> np.ndarray:
         """
@@ -62,12 +61,6 @@ class NoisyRingsClustering:
         Returns:
             array of shape (...,) denoting the Euclidean distance between the points
         """
-        if x.ndim != y.ndim:
-            raise ValueError(
-                "Shapes of x and y must be the same, got {} and {}".format(
-                    x.shape, y.shape
-                )
-            )
         return np.sqrt(np.sum((x - y) ** 2, axis=axis, keepdims=False))
 
     def _dist_to_rings(
@@ -89,14 +82,14 @@ class NoisyRingsClustering:
         # that'll be broadcasted to (n_rings, n_samples, n_features)
         # and reduced over the last axis (features axis)
         # so we'll get a matrix of shape (n_rings, n_samples) with the distances of each center to each sample
-        dists = self._eucledian_dist(x[None, ...], centers[:, None, :], axis=2)
+        dists = self._euclidean_dist(x[None, ...], centers[:, None, :], axis=2)
 
         # returns the absolute difference between the distances and the radius
         return np.abs(dists - radius[:, None])  # shape (n_rings, n_samples)
 
     def _get_new_memberships(self, samples: np.ndarray) -> np.ndarray:
         """
-        Computes the new memberships of the samples to the rings.
+        Computes the new memberships of the samples to the rings, according to the formula.
 
         Args:
             samples: ndarray of shape (n_samples, n_features)
@@ -106,32 +99,29 @@ class NoisyRingsClustering:
         """
 
         ring_dists = (
-            self._dist_to_rings(samples, self.centers, self.radii) ** 2 + self.eps
+            self._dist_to_rings(samples, self.centers, self.radii) ** (2 / (self.q - 1)) + self.eps
         )  # shape (n_rings, n_samples)
+        #shapes (1, n_rings, n_samples) / (n_rings, 1, n_samples) -> (n_rings, n_rings, n_samples)
+        term = (ring_dists[None, :, :] / ring_dists[:, None, :]) 
+        mem = 1 / np.sum(term, axis=0)
+        return mem
+    
 
-        # sum over the clusters, to compute, for each sample, the sum of the distances to each cluster
-        div = np.sum(ring_dists, axis=0, keepdims=True)  # shape (1, n_samples)
-
-        # compute the updated memberships, according to the formula
-        mem = 1 / (ring_dists / div) ** (1 / (self.q - 1))
-        return mem / (
-            np.sum(mem, axis=0, keepdims=True) + self.eps
-        )  # shape (n_rings, n_samples)
 
     def _get_new_radii(self, samples: np.ndarray) -> np.ndarray:
         """
-        Compute the new radii of the rings according to the formula.
+        Compute the new radii of the rings, according to the formula.
 
         Args:
             samples: array of shape (n_samples, n_features)
 
         Returns:
-            array of shape (n_rings)
+            array of shape (n_rings) denoting the new radii of the rings
         """
         memberships = self.memberships
         # apply mask to the memberships, so that noise samples are not taken into account for the new radii computation
         memberships = memberships * self.noise_mask
-        center_dists = self._eucledian_dist(
+        center_dists = self._euclidean_dist(
             samples[None, ...], self.centers[:, None, :], axis=2
         )  # shape (n_rings, n_samples)
         # compute the new radii according to the formula, not taking into account the noise samples
@@ -141,7 +131,7 @@ class NoisyRingsClustering:
 
     def _get_new_centers(self, samples: np.ndarray) -> np.ndarray:
         """
-        Calculate the new centers of the rings
+        Calculate the new centers of the rings, according to the formula.
 
         Args:
             samples: array of shape (n_samples, n_features)
@@ -153,7 +143,6 @@ class NoisyRingsClustering:
             self.memberships * self.noise_mask
         ) ** self.q  # shape (n_rings, n_samples)
 
-        # abuse broadcasting :D
         return np.sum(
             common[..., None] * samples[None, ...],
             axis=1,
@@ -165,13 +154,17 @@ class NoisyRingsClustering:
         self, old_memberships: np.ndarray, new_memberships: np.ndarray
     ) -> bool:
         """
-        Check if the memberships have converged
+        Checks if the memberships have converged.
+
+        Args:
+            old_memberships: array of shape (n_rings, n_samples)
+            new_memberships: array of shape (n_rings, n_samples)
         """
         return np.allclose(old_memberships, new_memberships, atol=self.convergence_eps)
 
     def _initialize(self, x: np.ndarray) -> None:
         """
-        Initialize the centers, radii and memberships of the rings
+        Initialize the centers, radii and memberships of the rings.
 
         Args:
             x: array of shape (n_samples, n_features)
@@ -182,8 +175,8 @@ class NoisyRingsClustering:
             # in the case of concentric rings, we can initialize the centers as the mean of the samples
             self.centers = np.mean(x, axis=0)[None, ...].repeat(self.n_rings, axis=0)
             # initialize the radii as random values between min and max distance to the center
-            max_dist = np.max(self._eucledian_dist(x, self.centers[0][None, ...]))
-            min_dist = np.min(self._eucledian_dist(x, self.centers[0][None, ...]))
+            max_dist = np.max(self._euclidean_dist(x, self.centers[0][None, ...]))
+            min_dist = np.min(self._euclidean_dist(x, self.centers[0][None, ...]))
             self.radii = np.random.uniform(min_dist, max_dist, self.n_rings)
             self.memberships = np.random.rand(self.n_rings, x.shape[0])
             self.memberships = self.memberships / np.sum(
@@ -197,8 +190,6 @@ class NoisyRingsClustering:
             self.centers = kmeans.centroids  # shape (n_rings, n_features)
 
             # initialize the radii as the average distance of the samples to the centers
-            # (1, n_samples, n_features) x (n_rings, 1, n_features) -> (n_rings, n_samples, n_features)
-
             self.memberships = kmeans.membership  # shape (n_rings, n_samples)
 
             self.noise_mask = np.ones_like(self.memberships, dtype=np.int32)
@@ -220,10 +211,13 @@ class NoisyRingsClustering:
         noise_checks = 0
         last_noise_mask = np.zeros_like(self.noise_mask)
         for it in range(self.max_iters):
+            # update the memberships, radii and centers
             self.last_iter = it
             old_memberships = self.memberships
             self.memberships = self._get_new_memberships(x)
             self.radii, self.centers = self._get_new_radii(x), self._get_new_centers(x)
+
+            # check for convergence on memberships
             if self._convergence_criterion(self.memberships, old_memberships):
                 if not self.apply_noise_removal:
                     logger.info(
@@ -233,6 +227,7 @@ class NoisyRingsClustering:
                     )
                     break
                 noise_mask = self._get_noise_mask(x)
+                # check if the noise mask has changed and we haven't reached the maximum number of noise checks. If so, recompute and continue
                 if self.max_noise_checks > noise_checks and not np.allclose(
                     noise_mask, last_noise_mask
                 ):
@@ -244,6 +239,7 @@ class NoisyRingsClustering:
                     )
                     noise_checks += 1
                     last_noise_mask = self.noise_mask
+                # if the noise mask hasn't changed, we can stop
                 else:
                     logger.info(
                         "[NoisyRingsClustering] Converged after {} iterations. Stopping early.".format(
@@ -255,6 +251,12 @@ class NoisyRingsClustering:
     def _get_noise_mask(self, x: np.ndarray) -> np.ndarray:
         """
         Mask where 1 means no noise and 0 means noise
+
+        Args:
+            x: array of shape (n_samples, n_features)
+
+        Returns:
+            array of shape (n_rings, n_samples)
         """
         # a point is considered noise if it's distance to all rings is
 

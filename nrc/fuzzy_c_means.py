@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +35,7 @@ class FuzzyCMeans:
         self.m = m
         self.fitted = False
         self.convergence_eps = convergence_eps
-        self.eps = 1e-8
+        self.eps = eps
 
     def _init_membership(self, n_samples: int) -> np.ndarray:
         """
