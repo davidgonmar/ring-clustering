@@ -11,7 +11,6 @@ def plot_results(
     centers: np.ndarray,
     labels: np.ndarray,
     cluster_base_colors: np.ndarray,
-    show_noise: bool = False,
 ) -> plt.Figure:
     """
     Plot the results of the clustering
