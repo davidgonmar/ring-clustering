@@ -44,40 +44,55 @@ apply_noise_removal = st.checkbox("apply_noise_removal", value=True)
 max_noise_checks = st.number_input("max_noise_checks", value=20)
 init_method = st.selectbox("init_method", ["fuzzycmeans", "concentric"])
 
+rect_size = st.number_input("rect_size", value=1200)
 
+mode = st.selectbox("mode", ["excentric", "concentric"])
+min_radius = st.number_input("min_radius", value=100)
+max_radius = st.number_input("max_radius", value=400)
+
+circle_noise = st.number_input("circle_noise", value=8)
+background_noise = st.number_input("background_noise", value=20)
 # Button to run the algorithm
 if st.button("Run Algorithm"):
     # Run the algorithm with the provided parameters
 
     # Generate some random data
     # ================ HELPERS ================
-    EXCENTRIC = np.array([[-600, -600], [-600, 600], [600, -600], [600, 600]])
+    half_rect_size = rect_size // 2
+    EXCENTRIC = np.array(
+        [
+            [-half_rect_size, -half_rect_size],
+            [-half_rect_size, half_rect_size],
+            [half_rect_size, -half_rect_size],
+            [half_rect_size, half_rect_size],
+        ]
+    )
     CONCENTRIC = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
-    EXCENTRIC_CLOSE = np.array([[-200, -200], [-200, 200], [200, -200], [200, 200]])
     NOISE_CONCENTRIC_DELIM = np.array(
-        [[-1200, -1200], [-1200, 1200], [1200, -1200], [1200, 1200]]
+        [[-half_rect_size, -half_rect_size], [half_rect_size, half_rect_size]]
     )
 
-    # ================ RINGS PARAMETERS ================
-    CENTER_DELIMS = EXCENTRIC
+    CENTER_DELIMS = CONCENTRIC if mode == "concentric" else EXCENTRIC
 
-    MINMAX_RADIUS = np.array([100, 400])
-    N_RINGS = 3
-    CIRCLES_NOISE = 8
+    # ================ RINGS PARAMETERS ================
+
+    MINMAX_RADIUS = np.array([min_radius, max_radius])
+    N_RINGS = n_rings
+    CIRCLES_NOISE = circle_noise
     N_SAMPLES_PER_RING = 150
 
     # ================ BG NOISE PARAMETERS ================
-    N_BACKGROUND_NOISE = 20
-    CENTER_DELIMS_NOISE = EXCENTRIC
+    N_BACKGROUND_NOISE = background_noise
+    CENTER_DELIMS_NOISE = NOISE_CONCENTRIC_DELIM
 
     # ================ ALGORITHM PARAMETERS ================
     # "fuzzycmeans" or "concentric"
-    INIT_METHOD = "fuzzycmeans"
-    FUZINESS_PARAM = 1.1
-    CONVERGENCE_EPS = 1e-5
-    MAX_ITERS = 10000
-    NOISE_DISTANCE_THRESHOLD = 70
-    APPLY_NOISE_REMOVAL = True
+    INIT_METHOD = init_method
+    FUZINESS_PARAM = q
+    CONVERGENCE_EPS = convergence_eps
+    MAX_ITERS = max_iters
+    NOISE_DISTANCE_THRESHOLD = noise_distance_threshold
+    APPLY_NOISE_REMOVAL = apply_noise_removal
     data = random_circles(
         center_delimiters=CENTER_DELIMS,
         min_max_radius=MINMAX_RADIUS,
