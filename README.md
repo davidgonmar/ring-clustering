@@ -1,5 +1,7 @@
 # Noisy Rings Clustering 💍
 
+<div align="center" style="margin: auto; width: 100%;" width="100%"><img src="./img/rings.png" alt="Noisy Rings Clustering" width="350"/></div>
+
 This repository contains the code and report for the final project of the course "Artificial Intelligence" at the University of Seville. The statement of the project can be found in the `statement` folder.
 
 TL;DR: The project consists of implementing a clustering algorithm that can cluster data that is distributed in rings, in a noisy environment.
